@@ -1,0 +1,126 @@
+import { http, createConfig } from 'wagmi'
+import { base } from 'wagmi/chains'
+import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
+
+// Contract addresses
+export const CONTRACTS = {
+  DONUT_TOKEN: '0xae4a37d554c6d6f3e398546d8566b25052e0169c',
+  GLAZELETS_NFT: '0xea5c38aB557f0b7d1E0d96f3befB6c8C74148395',
+  BURN_ADDRESS: '0x000000000000000000000000000000000000dEaD',
+} as const
+
+// Mint configuration
+export const MINT_CONFIG = {
+  PRICE_DONUT: 69n,
+  PRICE_DONUT_DECIMALS: 18,
+  MAX_SUPPLY: 808,
+  MAX_PER_WALLET: 4,
+} as const
+
+// Safely create the Farcaster connector
+function createFarcasterConnector() {
+  try {
+    return farcasterMiniApp()
+  } catch (err) {
+    console.error('[Wagmi] Failed to create Farcaster connector:', err)
+    return null
+  }
+}
+
+const farcasterConnector = createFarcasterConnector()
+
+// Wagmi config with Farcaster Mini App connector
+export const config = createConfig({
+  chains: [base],
+  transports: {
+    [base.id]: http(),
+  },
+  connectors: farcasterConnector ? [farcasterConnector] : [],
+})
+
+// ERC20 ABI for DONUT token interactions
+export const ERC20_ABI = [
+  {
+    name: 'balanceOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'allowance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'approve',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const
+
+// Glazelets NFT ABI (ERC721Enumerable)
+export const GLAZELETS_ABI = [
+  {
+    name: 'mint',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: '_origin', type: 'string' }],
+    outputs: [],
+  },
+  {
+    name: 'totalSupply',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'mintsPerWallet',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: '', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'mintPrice',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'balanceOf',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'owner', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'tokenOfOwnerByIndex',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'index', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'uint256' }],
+  },
+  {
+    name: 'tokenURI',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    outputs: [{ name: '', type: 'string' }],
+  },
+] as const

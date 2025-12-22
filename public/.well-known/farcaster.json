@@ -1,0 +1,34 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEzNzc5NTMsInR5cGUiOiJhdXRoIiwia2V5IjoiMHg0QTM0ZTM4M2E5ODYxMjdDNUM2ZTE4NEFEZkM3REFDRkMxZTU2RDBlIn0",
+    "payload": "eyJkb21haW4iOiJnbGF6ZWxldC1mcm9udC12Mi52ZXJjZWwuYXBwIn0",
+    "signature": "vW4Vq+jr42zaZNE36zg14Dr/B0v+7o7pX2/JEvZd1XQRjlQrqM0p70XfHL++dlXvUQkmaWbArOJXgUtqpt9RPxs="
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Glazelets Mint",
+    "version": "1",
+    "iconUrl": "https://i.imgur.com/vDMFToz.png",
+    "homeUrl": "https://glazelet-front-v2.vercel.app/",
+    "description": "Burn Donut to Mint a Glazelet",
+    "primaryCategory": "games",
+    "screenshotUrls": [
+      "https://i.imgur.com/vDMFToz.png"
+    ],
+    "imageUrl": "https://i.imgur.com/vDMFToz.png",
+    "heroImageUrl": "https://i.imgur.com/vDMFToz.png",
+    "splashImageUrl": "https://i.imgur.com/vDMFToz.png",
+    "splashBackgroundColor": "#000000",
+    "tags": [
+      "gaming",
+      "games",
+      "crypto",
+      "donut"
+    ],
+    "tagline": "Stay Glazin",
+    "buttonTitle": "Extract Glazelet",
+    "ogTitle": "Glazelets",
+    "ogImageUrl": "https://i.imgur.com/vDMFToz.png",
+    "subtitle": "Stay Glazin"
+  }
+}
