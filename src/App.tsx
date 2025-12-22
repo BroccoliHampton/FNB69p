@@ -1,460 +1,283 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAccount, useConnect } from 'wagmi';
-import { Globe } from './components/Globe';
-import { InfoPopup } from './components/InfoPopup';
-import { MintSuccessModal } from './components/MintSuccessModal';
-import { PsychedelicFace } from './components/PsychedelicFace';
-import { RISK_REGIONS } from './constants';
-import { Territory, ViewMode, GameEffect } from './types';
-import { AudioService } from './services/audioService';
-import { useFarcaster } from './hooks/useFarcaster';
-import { useGlazelets } from './hooks/useGlazelets';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { injected } from 'wagmi/connectors';
+import { MiningData, TickerInfo, MarketStats } from './types';
+import { getMiningCommentary } from './services/gemini';
+import CrudeFlag from './components/CrudeFlag';
+import { useRig } from './hooks/useRig';
+import { TOKEN_ADDRESS } from './config/contracts';
 
-const App = () => {
-  // --- Welcome Screen State ---
-  const [showWelcome, setShowWelcome] = useState(true);
-
-  // --- Farcaster SDK ---
-  const { 
-    isSDKLoaded, 
-    isInMiniApp, 
-    ready: farcasterReady,
-    user: farcasterUser,
-    composeCast,
-  } = useFarcaster();
-
-  // --- Wallet & Contract State ---
-  const { isConnected, address } = useAccount();
-  const { connect, connectors } = useConnect();
+const App: React.FC = () => {
+  const { address, isConnected } = useAccount();
+  const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
+  
   const {
+    state,
+    isLoading,
+    mineRate,
+    glazed,
+    price,
+    unitPrice,
+    unitBalance,
     donutBalance,
-    hasEnoughDonut,
-    totalSupply,
-    isSoldOut,
-    canMint,
-    mint,
-    mintStatus,
-    error: mintError,
-    mintPrice,
-    maxSupply,
-    lastTxHash,
-    reset: resetMintStatus,
-  } = useGlazelets();
+    ethBalance,
+    timer,
+    miner,
+    epochId,
+    mine,
+    isMining,
+    isConfirmed,
+    refetch,
+  } = useRig();
 
-  // --- Game State ---
-  const [showInfoPopup, setShowInfoPopup] = useState(false);
-  const [mintedRegion, setMintedRegion] = useState<Territory | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [commentary, setCommentary] = useState<string>("INITIALIZING UGLY MINER...");
+  const commentaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Derive wallet status from connection state
-  const walletStatus: 'checking' | 'eligible' | 'denied' = 
-    !isSDKLoaded ? 'checking' :
-    !isConnected ? 'checking' :
-    hasEnoughDonut ? 'eligible' : 'denied';
-
-  // Initialize Territories
-  const [territories, setTerritories] = useState<Record<string, Territory>>(() => {
-  const initial: Record<string, Territory> = {};
-  RISK_REGIONS.forEach((r) => {
-    // Pink spectrum: hue 330-350, varying saturation and lightness
-    const hue = 330 + Math.floor(Math.random() * 20); // 330-350 (pink range)
-    const saturation = 25 + Math.floor(Math.random() * 35); // 25-60%
-    const lightness = 45 + Math.floor(Math.random() * 30); // 45-75%
-    initial[r.id] = {
-      ...r,
-      baseColor: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
-      owner: null,
-    };
+  // Calculate derived values
+  const mineRatePerSecond = mineRate / 1e18;
+  const totalMined = glazed / 1e18;
+  const balance = unitBalance;
+  const priceInEth = parseFloat(price);
+  
+  const [marketStats] = useState<MarketStats>({
+    marketCap: 47.00,
+    totalSupply: 544640,
+    liquidity: 38.42,
+    volume24h: 33.31,
   });
-  return initial;
-});
 
-  const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
-  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
-  const viewMode: ViewMode = 'territories';
-  const [zoom, setZoom] = useState(1);
-  const [effects, setEffects] = useState<GameEffect[]>([]);
-  
-  // Audio State - single toggle for both music and SFX
-  const [isSoundEnabled, setIsSoundEnabled] = useState(false);
+  const tickerInfo: TickerInfo = {
+    symbol: "$ETHEREUM",
+    name: "STICKR ツ",
+    address: `${TOKEN_ADDRESS.slice(0, 6)}...${TOKEN_ADDRESS.slice(-4)}`,
+    deployedBy: "FNB69P",
+    description: "the ticker is $ETHEREUM. FNB69P. second best shitcoin on Base.",
+    timer: timer
+  };
 
-  // --- Initialize Farcaster SDK ---
   useEffect(() => {
-    if (isSDKLoaded) {
-      // Only call ready() when we're actually in a miniapp
-      if (isInMiniApp) {
-        // Disable native gestures to prevent swipe-down-to-close interfering with globe
-        farcasterReady({ disableNativeGestures: true });
-      }
-      
-      if (isInMiniApp && !isConnected && connectors.length > 0) {
-        connect({ connector: connectors[0] });
-      }
-    }
-  }, [isSDKLoaded, isInMiniApp, isConnected, connectors, connect, farcasterReady]);
-
-  // --- Show success modal when mint succeeds ---
-  useEffect(() => {
-    if (mintStatus === 'success' && mintedRegion) {
-      setShowSuccessModal(true);
-    }
-  }, [mintStatus, mintedRegion]);
-
-  // --- Game Loop (Effects Cleanup) ---
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const currentTime = Date.now();
-      
-      setEffects(prev => {
-        if (prev.length === 0) return prev;
-        return prev.filter(e => currentTime - e.startTime < e.duration + 500);
+    if (isConfirmed) {
+      getMiningCommentary(Math.floor(Math.random() * 50) + 10).then(text => {
+        setCommentary(text);
       });
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  // --- Enter app and start music ---
-  const handleEnter = async () => {
-    const audio = AudioService.getInstance();
-    if (!audio.isInitialized) {
-      await audio.init();
+      refetch();
     }
-    if (audio.isMusicMuted) audio.toggleMusicMute();
-    if (audio.isSfxMuted) audio.toggleSfxMute();
-    setIsSoundEnabled(true);
-    setShowWelcome(false);
-  };
+  }, [isConfirmed, refetch]);
 
-  // --- Audio Handler - toggles both music and SFX ---
-  const toggleSound = async () => {
-    const audio = AudioService.getInstance();
-    if (!audio.isInitialized) {
-      await audio.init();
-      setIsSoundEnabled(true);
-      if (audio.isMusicMuted) audio.toggleMusicMute();
-      if (audio.isSfxMuted) audio.toggleSfxMute();
-    } else {
-      const musicMuted = audio.toggleMusicMute();
-      if (audio.isSfxMuted !== musicMuted) {
-        audio.toggleSfxMute();
-      }
-      setIsSoundEnabled(!musicMuted);
+  const handleMine = useCallback(async () => {
+    if (!isConnected) {
+      connect({ connector: injected() });
+      return;
     }
-  };
-
-  // --- Gameplay Actions ---
-  const handleMapHover = useCallback((id: string | null) => {
-    setHoveredRegionId(id);
-  }, []);
-
-  const handleMapSelect = useCallback((id: string | null) => {
-    setSelectedRegionId(prev => (prev !== id ? id : prev));
-  }, []);
-
-  const handleExtract = async () => {
-    if (walletStatus !== 'eligible' || !selectedRegionId) return;
     
-    const region = territories[selectedRegionId];
-    if (!region) return;
+    setCommentary("MINING IN PROGRESS...");
+    await mine();
+  }, [isConnected, connect, mine]);
 
-    setMintedRegion(region);
-
-    const newEffect: GameEffect = {
-      targetId: selectedRegionId,
-      startTime: Date.now(),
-      duration: 2000,
-      type: 'laser',
-      impacted: false
-    };
-    setEffects(prev => [...prev, newEffect]);
-
-    try {
-      AudioService.getInstance().playLaserSound();
-    } catch (e) {
-      console.warn("Audio playback failed:", e);
+  const handleConnect = () => {
+    if (isConnected) {
+      disconnect();
+    } else {
+      connect({ connector: injected() });
     }
-
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    await mint(region.name);
   };
 
-  const onInfectComplete = useCallback((id: string) => {
-    if (mintStatus === 'success') {
-      setTerritories(prev => ({
-        ...prev,
-        [id]: {
-          ...prev[id], 
-          owner: 'player',
-          lastMintTime: Date.now()
-        }
-      }));
-    }
-  }, [mintStatus]);
+  const TokenIcon = () => (
+    <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center border border-black overflow-hidden mr-1">
+      <div className="w-full h-full bg-mine-orange animate-spin flex items-center justify-center text-[8px] font-black text-white">S</div>
+    </div>
+  );
 
-  const handleCloseSuccessModal = useCallback(() => {
-    setShowSuccessModal(false);
-    setMintedRegion(null);
-    resetMintStatus();
-  }, [resetMintStatus]);
+  const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
-  const handleShare = useCallback(() => {
-    if (mintedRegion) {
-      const txLink = lastTxHash ? `\n\nhttps://basescan.org/tx/${lastTxHash}` : '';
-      composeCast(
-        `🍩 Just extracted a Glazelet from ${mintedRegion.name}!${txLink}\n\nMint yours:`,
-        'https://glazelet-front-v2.vercel.app'
-      );
-    }
-  }, [mintedRegion, lastTxHash, composeCast]);
+  return (
+    <div className="min-h-screen bg-black text-white p-4 font-mono select-none overflow-x-hidden">
+      
+      {/* 1. MINER HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-black uppercase italic bg-mine-blue px-2">Miner</h2>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleConnect}
+            className="bg-[#2D1B44] text-[#A855F7] px-4 py-1 rounded flex items-center text-sm font-bold border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+          >
+            <span className="mr-2">🔗</span> 
+            {isConnected ? shortenAddress(address!) : 'Connect'}
+          </button>
+          <button className="bg-[#3F3F46] text-[#E4E4E7] px-4 py-1 rounded flex items-center text-sm font-bold border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+            <span className="mr-2">📋</span> Share
+          </button>
+        </div>
+      </div>
 
-  // --- Render Helpers ---
-  const activeRegion = selectedRegionId ? territories[selectedRegionId] : (hoveredRegionId ? territories[hoveredRegionId] : null);
-  const mintPercent = ((totalSupply / maxSupply) * 100).toFixed(1);
+      {/* 2. PROFILE SECTION */}
+      <div className="flex justify-between items-start mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-white border-4 border-mine-blue flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-12 bg-mine-orange flex items-center justify-center text-2xl font-black text-white italic">S</div>
+          </div>
+          <div>
+            <h3 className="text-2xl font-black leading-none">{tickerInfo.name}</h3>
+            <p className="text-gray-500 font-bold">{tickerInfo.address}</p>
+          </div>
+        </div>
+        <div className="text-gray-500 font-bold text-xl">{tickerInfo.timer}</div>
+      </div>
 
-  const isExtracting = mintStatus === 'approving' || mintStatus === 'minting';
-  const buttonDisabled = !selectedRegionId || walletStatus !== 'eligible' || isExtracting || !canMint || isSoldOut;
-  
-  const getButtonText = () => {
-    if (!isConnected) return 'CONNECT';
-    if (mintStatus === 'approving') return 'APPROVING...';
-    if (mintStatus === 'minting') return 'MINTING...';
-    if (isSoldOut) return 'SOLD OUT';
-    if (!canMint) return 'LIMIT REACHED';
-    if (!hasEnoughDonut) return 'NEED DONUT';
-    return 'EXTRACT';
-  };
+      {/* CURRENT MINER */}
+      {miner && miner !== '0x0000000000000000000000000000000000000000' && (
+        <div className="mb-4 bg-mine-green/20 border-2 border-mine-green p-2">
+          <span className="text-gray-500 font-bold">Current Miner: </span>
+          <span className="font-black text-mine-green">{shortenAddress(miner)}</span>
+        </div>
+      )}
 
-  // --- Welcome Screen ---
-  if (showWelcome) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-black text-gray-200 font-tech overflow-hidden select-none">
-        <div className="w-full max-w-[420px] h-full max-h-[900px] bg-[#0a0a0a] flex flex-col items-center justify-center relative shadow-[0_0_50px_rgba(255,255,255,0.1)] overflow-hidden border border-[#333]">
-          
-          {/* Logo */}
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="text-5xl font-brand tracking-widest text-white text-shadow-white mb-2">
-              GLAZELETS
+      {/* 3. MAIN MINING STATS */}
+      <div className="grid grid-cols-2 gap-y-6 mb-8">
+        <div>
+          <label className="text-gray-500 uppercase font-bold block mb-1">Mine rate</label>
+          <p className="text-2xl font-black">{mineRatePerSecond.toFixed(2)}/s</p>
+          <p className="text-gray-600 font-bold text-sm">${(mineRatePerSecond * unitPrice).toFixed(4)}/s</p>
+        </div>
+        <div>
+          <label className="text-gray-500 uppercase font-bold block mb-1">Total Glazed</label>
+          <div className="flex items-center">
+            <TokenIcon />
+            <p className="text-2xl font-black">+{totalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+          </div>
+          <p className="text-gray-600 font-bold text-sm">${(totalMined * unitPrice).toFixed(2)}</p>
+        </div>
+        <div>
+          <label className="text-gray-500 uppercase font-bold block mb-1">Mine Price</label>
+          <p className="text-2xl font-black">Ξ{priceInEth.toFixed(4)}</p>
+        </div>
+        <div>
+          <label className="text-gray-500 uppercase font-bold block mb-1">Epoch</label>
+          <p className="text-2xl font-black">#{epochId}</p>
+        </div>
+      </div>
+
+      {/* 4. 3D FLAG (CENTERED CONTAINER) */}
+      <div className="w-full h-64 bg-mine-green border-4 border-black mb-8 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
+        <div className="absolute top-0 left-0 p-2 text-xs font-black bg-white text-mine-blue border-b-4 border-r-4 border-black z-10">UGLY_FLAG.OBJ</div>
+        <CrudeFlag />
+      </div>
+
+      {/* 5. YOUR POSITION */}
+      <div className="mb-8 border-t-4 border-mine-orange pt-4">
+        <h2 className="text-3xl font-black uppercase mb-6 italic">Your position</h2>
+        {!isConnected ? (
+          <p className="text-gray-500 font-bold">Connect wallet to view your position</p>
+        ) : isLoading ? (
+          <p className="text-gray-500 font-bold">Loading...</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-y-6">
+            <div>
+              <label className="text-gray-500 uppercase font-bold block mb-1">Token Balance</label>
+              <div className="flex items-center">
+                <TokenIcon />
+                <p className="text-2xl font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              </div>
+              <p className="text-gray-600 font-bold text-sm">${(balance * unitPrice).toFixed(2)}</p>
             </div>
-            <div className="text-sm font-tech text-[#ec4899] tracking-[0.3em] uppercase mb-8">
-              by Glaze Corp.
+            <div>
+              <label className="text-gray-500 uppercase font-bold block mb-1">DONUT Balance</label>
+              <div className="flex items-center">
+                <p className="text-2xl font-black">🍩 {donutBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              </div>
             </div>
-            
-            {/* Psychedelic Face */}
-            <div className="mb-8">
-              <PsychedelicFace />
+            <div>
+              <label className="text-gray-500 uppercase font-bold block mb-1">ETH Balance</label>
+              <p className="text-2xl font-black">Ξ{parseFloat(ethBalance).toFixed(4)}</p>
             </div>
+            <div>
+              <label className="text-gray-500 uppercase font-bold block mb-1">Unit Price</label>
+              <p className="text-2xl font-black">${unitPrice.toFixed(6)}</p>
+            </div>
+          </div>
+        )}
+      </div>
 
-            {/* Tagline */}
-            <p className="text-gray-400 text-center text-sm mb-8 px-8 leading-relaxed">
-              Extract unique Glazelets from regions around the world. Burn DONUT to mint your NFT.
-            </p>
-            
-            {/* Enter Button */}
-            <button 
-              onClick={handleEnter}
-              className="px-12 py-4 bg-[#ec4899] text-white font-brand text-xl uppercase tracking-widest rounded hover:brightness-110 transition-all active:translate-y-px shadow-[0_0_30px_rgba(236,72,153,0.5)] hover:shadow-[0_0_50px_rgba(236,72,153,0.7)]"
-            >
-              Enter
-            </button>
-            
-            <p className="text-gray-600 text-xs mt-4">
-              <i className="fa-solid fa-volume-high mr-2"></i>
-              Sound will be enabled
-            </p>
+      {/* 6. ABOUT SECTION */}
+      <div className="mb-8 bg-mine-blue border-4 border-black p-4">
+        <h2 className="text-3xl font-black uppercase mb-4 italic">About</h2>
+        <div className="flex items-center gap-2 mb-4 font-bold">
+          <span className="text-gray-400">Deployed by</span>
+          <TokenIcon />
+          <div className="flex gap-1">
+            <div className="w-4 h-4 bg-mine-blue"></div>
+            <div className="w-4 h-4 bg-mine-orange"></div>
+            <div className="w-4 h-4 bg-mine-green"></div>
+          </div>
+          <span>ticker $ETHEREUM</span>
+        </div>
+        <p className="text-xl font-bold leading-tight mb-6">{tickerInfo.description}</p>
+        <div className="flex gap-2 flex-wrap">
+          <button 
+            onClick={() => navigator.clipboard.writeText(TOKEN_ADDRESS)}
+            className="bg-[#27272A] px-4 py-2 rounded-full border border-gray-600 font-bold text-sm flex items-center"
+          >
+            ETHEREUM <span className="ml-2">📋</span>
+          </button>
+          <button className="bg-[#27272A] px-4 py-2 rounded-full border border-gray-600 font-bold text-sm flex items-center">
+            ETHEREUM–DONUT LP <span className="ml-2">📋</span>
+          </button>
+        </div>
+      </div>
+
+      {/* 7. STATS SECTION */}
+      <div className="mb-8 border-b-4 border-mine-green pb-8">
+        <h2 className="text-3xl font-black uppercase mb-6 italic">Stats</h2>
+        <div className="grid grid-cols-2 gap-y-8">
+          <div>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Market cap</label>
+            <p className="text-2xl font-black">${marketStats.marketCap.toFixed(2)}</p>
+          </div>
+          <div>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Total supply</label>
+            <p className="text-2xl font-black">{marketStats.totalSupply.toLocaleString()}</p>
+          </div>
+          <div>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Liquidity</label>
+            <p className="text-2xl font-black">${marketStats.liquidity.toFixed(2)}</p>
+          </div>
+          <div>
+            <label className="text-gray-500 uppercase font-bold block mb-1">24h volume</label>
+            <p className="text-2xl font-black">${marketStats.volume24h.toFixed(2)}</p>
           </div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="flex justify-center items-center h-screen bg-black text-gray-200 font-tech overflow-hidden select-none">
-      {/* Main App Container */}
-      <div className="w-full max-w-[420px] h-full max-h-[900px] bg-[#0a0a0a] flex flex-col relative shadow-[0_0_50px_rgba(255,255,255,0.1)] overflow-hidden border border-[#333]">
-        
-        {/* Header */}
-        <header className="px-5 py-4 flex justify-between items-center border-b border-[#333] bg-black z-50 relative shrink-0">
-          <div className="flex flex-col leading-none">
-            <div className="text-2xl font-brand tracking-widest text-white text-shadow-white">
-              GLAZELETS
-            </div>
-            <div className="text-[10px] font-tech text-[#ec4899] tracking-[0.2em] uppercase mt-1">
-              by Glaze Corp.
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setShowInfoPopup(!showInfoPopup)}
-              className={`transition-colors text-xl ${showInfoPopup ? 'text-[#ec4899]' : 'text-gray-600 hover:text-[#ec4899]'}`}
-              title="Info & Wallet"
-            >
-              <i className="fa-solid fa-circle-info"></i>
-            </button>
-
-            <button 
-              onClick={toggleSound}
-              className={`transition-colors text-xl ${isSoundEnabled ? 'text-[#ec4899]' : 'text-gray-600 hover:text-[#ec4899]'}`}
-              title="Toggle Sound"
-            >
-              <i className={`fa-solid ${isSoundEnabled ? 'fa-volume-high' : 'fa-volume-xmark'}`}></i>
-            </button>
-
-            <div className="flex items-center gap-2 pl-3 border-l border-[#333]">
-              <div className="w-8 h-8 rounded bg-black overflow-hidden border border-[#ec4899] transition-all hover:scale-105 grayscale hover:grayscale-0">
-                <img 
-                  src={farcasterUser?.pfpUrl || `https://api.dicebear.com/9.x/bottts/svg?seed=${address || 'guest'}`} 
-                  alt="avatar" 
-                />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Wallet Status - hide when success modal is showing */}
-        {!showSuccessModal && (
-          <div className={`shrink-0 border-b transition-colors duration-500 flex items-center justify-between px-4 py-3 font-tech text-xs tracking-wider
-            ${walletStatus === 'checking' ? 'bg-[#111] border-[#333] text-gray-500' : 
-              walletStatus === 'eligible' ? 'bg-[#ec4899]/10 border-[#ec4899]/50 text-white' : 
-              'bg-red-900/20 border-red-500/50 text-red-400'}`}>
-            
-            <div className="flex items-center gap-2">
-              <i className={`fa-solid ${
-                walletStatus === 'checking' ? 'fa-circle-notch fa-spin' : 
-                walletStatus === 'eligible' ? 'fa-wallet text-[#ec4899]' : 'fa-ban'
-              }`}></i>
-              <span>
-                {walletStatus === 'checking' && (isConnected ? "CHECKING BALANCE..." : "CONNECTING...")}
-                {walletStatus === 'eligible' && "ACCESS GRANTED"}
-                {walletStatus === 'denied' && "INSUFFICIENT DONUT"}
-              </span>
-            </div>
-            <div className="font-bold">
-              {!isConnected ? "..." : donutBalance.toLocaleString() + " DONUT"}
-            </div>
-          </div>
-        )}
-        
-        {/* Instruction Banner - hide when info popup or success modal is showing */}
-        {!showInfoPopup && !showSuccessModal && (
-          <div className="px-4 relative z-40 shrink-0">
-            <div className="bg-[#111] border border-[#333] rounded p-3 mt-3 shadow-inner shadow-black flex items-center justify-center h-20 text-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-[#ec4899]/5 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-              <i className="fa-solid fa-circle-info text-[#ec4899] text-lg mr-3 animate-pulse"></i>
-              <div className="font-brand text-white text-xs sm:text-sm tracking-widest uppercase leading-relaxed">
-                Choose a region to extract <br/> your <span className="text-[#ec4899] text-shadow-neon font-bold">Glazelet</span> from below...
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3D Map View */}
-        <div className="relative flex-1 flex flex-col overflow-hidden w-full">
-          <Globe 
-            territories={territories}
-            zoom={zoom}
-            viewMode={viewMode}
-            effects={effects}
-            setEffects={setEffects}
-            onHover={handleMapHover}
-            onSelect={handleMapSelect}
-            onInfectComplete={onInfectComplete}
-            selectedRegionId={selectedRegionId}
-          />
-
-          {/* Overlays */}
-          {showInfoPopup && <InfoPopup onClose={() => setShowInfoPopup(false)} />}
-          {showSuccessModal && mintedRegion && (
-            <MintSuccessModal 
-              region={mintedRegion}
-              txHash={lastTxHash}
-              onClose={handleCloseSuccessModal}
-              onShare={handleShare}
-            />
-          )}
-
-          {/* Zoom Slider - hide when success modal is showing */}
-          {!showSuccessModal && (
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/80 border border-[#333] rounded p-3 flex flex-col items-center justify-between z-20 h-40 backdrop-blur-sm">
-              <div className="text-[10px] text-white"><i className="fa-solid fa-plus"></i></div>
-              <input 
-                type="range" 
-                {...({ orient: "vertical" } as any)}
-                min="1" max="3.5" step="0.1" 
-                value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="h-20 w-2 accent-[#ec4899]"
-                style={{ WebkitAppearance: 'slider-vertical' } as any}
-              />
-              <div className="text-[10px] text-white"><i className="fa-solid fa-minus"></i></div>
-            </div>
-          )}
-
-          {/* Region HUD - hide when success modal is showing */}
-          {activeRegion && !showSuccessModal && (
-            <div className="absolute top-4 left-4 z-30 bg-black/90 border border-[#ec4899] p-2 rounded backdrop-blur-md text-xs font-tech pointer-events-none shadow-[0_0_15px_rgba(236,72,153,0.3)]">
-              <div className="text-white font-bold uppercase tracking-widest mb-1">{activeRegion.name}</div>
-              <div className={`text-[#ec4899] ${selectedRegionId === activeRegion.id ? 'animate-pulse font-bold' : ''}`}>
-                {selectedRegionId === activeRegion.id ? 'READY TO EXTRACT' : 'SCANNING...'}
-              </div>
-            </div>
-          )}
-
+      {/* 8. AI COMMENTARY & MINE BUTTON */}
+      <div className="sticky bottom-4 z-50">
+        <div className="bg-mine-orange p-2 border-4 border-black mb-2 animate-bounce">
+          <p className="text-sm font-black text-black bg-white p-1">
+            {'> '} {commentary}
+          </p>
         </div>
+        <button
+          onClick={handleMine}
+          disabled={isMining}
+          className={`
+            w-full h-24 font-black text-5xl border-8 border-black 
+            transition-all active:scale-95
+            ${isMining 
+              ? 'bg-mine-green text-white cursor-wait' 
+              : 'bg-mine-orange text-mine-blue shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1'
+            }
+          `}
+        >
+          {!isConnected ? 'CONNECT' : isMining ? 'MINING...' : `MINE (Ξ${priceInEth.toFixed(4)})`}
+        </button>
+      </div>
 
-        {/* Bottom Stats Grid - hide when success modal is showing */}
-        {!showSuccessModal && (
-          <div className="grid grid-cols-2 gap-2 px-4 mb-2 z-40 relative shrink-0">
-            {/* Mint Progress */}
-            <div className="bg-[#111] border border-[#333] rounded p-3 h-20 flex flex-col justify-center relative overflow-hidden">
-              <div className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-1 relative z-10">% Minted</div>
-              <div className="flex items-baseline gap-1 relative z-10">
-                <i className="fa-solid fa-chart-pie text-[#ec4899] text-xs"></i>
-                <span className="text-xl font-bold font-tech text-white">{mintPercent}%</span>
-              </div>
-              <div className="text-[10px] text-gray-500 mt-1 relative z-10 font-mono">
-                {totalSupply} / {maxSupply}
-              </div>
-              <div className="absolute bottom-0 left-0 h-1 bg-[#ec4899] transition-all duration-1000" style={{ width: `${mintPercent}%` }}></div>
-            </div>
-            
-            {/* Cost/Balance */}
-            <div className="bg-[#111] border border-[#333] rounded p-3 h-20 flex flex-col justify-center">
-              <div className="flex justify-between items-center h-full">
-                <div className="flex flex-col justify-center">
-                  <div className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-0.5">Mint Cost</div>
-                  <div className="text-lg font-bold font-tech text-white leading-none">{mintPrice} DONUT</div>
-                </div>
-                <div className="text-right flex flex-col justify-center pl-3 border-l border-[#333]">
-                  <div className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mb-0.5">Balance</div>
-                  <div className="text-sm font-bold font-tech text-white leading-none">
-                    {donutBalance.toLocaleString()}
-                  </div>
-                  <div className="text-[9px] text-[#ec4899] mt-0.5 font-bold">DONUT</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Footer Action Button - hide when success modal is showing */}
-        {!showSuccessModal && (
-          <div className="p-4 flex gap-3 items-center z-40 relative bg-black border-t border-[#333] shrink-0">
-            <button 
-              disabled={buttonDisabled}
-              onClick={(e) => { e.stopPropagation(); handleExtract(); }}
-              className={`w-full rounded h-12 font-brand text-lg font-bold uppercase transition-all tracking-widest 
-                ${buttonDisabled
-                  ? 'bg-[#111] text-[#333] border border-[#222] cursor-not-allowed' 
-                  : 'bg-[#ec4899] text-white border-none hover:brightness-110 active:translate-y-px active:shadow-[0_0_20px_#ec4899]'
-                }`}
-            >
-              {getButtonText()}
-            </button>
-          </div>
-        )}
+      {/* UGLY SIDEBAR OVERLAY */}
+      <div className="hidden xl:block fixed top-0 left-0 w-8 h-full bg-mine-orange border-r-4 border-black flex flex-col items-center py-4 gap-8 opacity-50">
+        <div className="rotate-90 font-black text-black text-xs whitespace-nowrap">UGLY_INTERFACE_v69.0.1</div>
       </div>
     </div>
   );
-}
+};
 
 export default App;
