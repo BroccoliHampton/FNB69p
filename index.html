@@ -1,38 +1,39 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/donut.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#000000" />
-    <meta name="description" content="Glaze World - Mint your Glazelet NFT by burning DONUT tokens" />
-    
-    <!-- Open Graph -->
-    <meta property="og:title" content="Glaze World" />
-    <meta property="og:description" content="Extract your Glazelet NFT from the globe. Burn 69 DONUT to mint." />
-    <meta property="og:image" content="https://i.imgur.com/YIcXO7c.png" />
-    
-    <!-- Farcaster Mini App Embed (current format) -->
-    <meta name="fc:miniapp" content='{"version":"1","imageUrl":"https://i.imgur.com/YIcXO7c.png","button":{"title":"🍩 Extract Glazelet","action":{"type":"launch_miniapp","name":"Glaze World","url":"https://glazelet-front-v2.vercel.app","splashImageUrl":"https://glazelet-front-v2.vercel.app/splash.png","splashBackgroundColor":"#000000"}}}' />
-    
-    <!-- Farcaster Frame Embed (backward compatibility for some mobile clients) -->
-    <meta name="fc:frame" content='{"version":"1","imageUrl":"https://i.imgur.com/YIcXO7c.png","button":{"title":"🍩 Extract Glazelet","action":{"type":"launch_frame","name":"Glaze World","url":"https://glazelet-front-v2.vercel.app","splashImageUrl":"https://glazelet-front-v2.vercel.app/splash.png","splashBackgroundColor":"#000000"}}}' />
-    
-    <!-- Farcaster Quick Auth preconnect -->
-    <link rel="preconnect" href="https://auth.farcaster.xyz" />
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    
-    <title>Glaze World</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UglyMine-69</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #000000;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    .bg-mine-blue { background-color: #0000FF; }
+    .bg-mine-orange { background-color: #FF4500; }
+    .bg-mine-green { background-color: #008000; }
+    .text-mine-blue { color: #0000FF; }
+    .text-mine-orange { color: #FF4500; }
+    .text-mine-green { color: #008000; }
+    .border-mine-blue { border-color: #0000FF; }
+    .border-mine-orange { border-color: #FF4500; }
+    .border-mine-green { border-color: #008000; }
+
+    @keyframes wave {
+      0% { transform: translateZ(0) translateY(0); }
+      50% { transform: translateZ(40px) translateY(-5px); }
+      100% { transform: translateZ(0) translateY(0); }
+    }
+    .flag-segment {
+      animation: wave 2s infinite ease-in-out;
+      transform-style: preserve-3d;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/main.tsx"></script>
+</body>
 </html>
