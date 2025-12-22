@@ -1,126 +1,76 @@
-import { http, createConfig } from 'wagmi'
-import { base } from 'wagmi/chains'
-import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
+import { useReadContract, useWriteContract, useAccount, useWaitForTransactionReceipt } from 'wagmi';
+import { formatEther, parseEther } from 'viem';
+import { MULTICALL_ADDRESS, MULTICALL_ABI, RIG_ADDRESS, type RigState } from '../config/contracts';
 
-// Contract addresses
-export const CONTRACTS = {
-  DONUT_TOKEN: '0xae4a37d554c6d6f3e398546d8566b25052e0169c',
-  GLAZELETS_NFT: '0xea5c38aB557f0b7d1E0d96f3befB6c8C74148395',
-  BURN_ADDRESS: '0x000000000000000000000000000000000000dEaD',
-} as const
+export function useRig() {
+  const { address } = useAccount();
 
-// Mint configuration
-export const MINT_CONFIG = {
-  PRICE_DONUT: 69n,
-  PRICE_DONUT_DECIMALS: 18,
-  MAX_SUPPLY: 808,
-  MAX_PER_WALLET: 4,
-} as const
+  const { data: rigData, refetch, isLoading } = useReadContract({
+    address: MULTICALL_ADDRESS,
+    abi: MULTICALL_ABI,
+    functionName: 'getRig',
+    args: address ? [RIG_ADDRESS, address] : undefined,
+    query: {
+      enabled: !!address,
+      refetchInterval: 5000,
+    },
+  });
 
-// Safely create the Farcaster connector
-function createFarcasterConnector() {
-  try {
-    return farcasterMiniApp()
-  } catch (err) {
-    console.error('[Wagmi] Failed to create Farcaster connector:', err)
-    return null
-  }
+  const { writeContract, data: txHash, isPending: isMining } = useWriteContract();
+  
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    hash: txHash,
+  });
+
+  const state = rigData as RigState | undefined;
+
+  const mine = async (maxPriceEth: string = '0.01', epochUri: string = '') => {
+    if (!state) return;
+    
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
+    const maxPrice = parseEther(maxPriceEth);
+    
+    writeContract({
+      address: MULTICALL_ADDRESS,
+      abi: MULTICALL_ABI,
+      functionName: 'mine',
+      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, epochUri],
+      value: state.price,
+    });
+  };
+
+  const getTimer = () => {
+    if (!state) return '00:00';
+    const now = BigInt(Math.floor(Date.now() / 1000));
+    const elapsed = now - state.epochStartTime;
+    const remaining = Math.max(0, 3600 - Number(elapsed));
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    return `${mins}m ${secs.toString().padStart(2, '0')}s`;
+  };
+
+  return {
+    state,
+    isLoading,
+    refetch,
+    epochId: state?.epochId ? Number(state.epochId) : 0,
+    mineRate: state?.ups ? Number(state.ups) : 0,
+    glazed: state?.glazed ? Number(state.glazed) : 0,
+    price: state?.price ? formatEther(state.price) : '0',
+    priceWei: state?.price ?? 0n,
+    unitPrice: state?.unitPrice ? Number(state.unitPrice) / 1e18 : 0,
+    miner: state?.miner ?? '0x0000000000000000000000000000000000000000',
+    ethBalance: state?.ethBalance ? formatEther(state.ethBalance) : '0',
+    wethBalance: state?.wethBalance ? formatEther(state.wethBalance) : '0',
+    donutBalance: state?.donutBalance ? Number(state.donutBalance) / 1e18 : 0,
+    unitBalance: state?.unitBalance ? Number(state.unitBalance) / 1e18 : 0,
+    timer: getTimer(),
+    epochStartTime: state?.epochStartTime ? Number(state.epochStartTime) : 0,
+    epochUri: state?.epochUri ?? '',
+    rigUri: state?.rigUri ?? '',
+    mine,
+    isMining: isMining || isConfirming,
+    isConfirmed,
+    txHash,
+  };
 }
-
-const farcasterConnector = createFarcasterConnector()
-
-// Wagmi config with Farcaster Mini App connector
-export const config = createConfig({
-  chains: [base],
-  transports: {
-    [base.id]: http(),
-  },
-  connectors: farcasterConnector ? [farcasterConnector] : [],
-})
-
-// ERC20 ABI for DONUT token interactions
-export const ERC20_ABI = [
-  {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'account', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'allowance',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'spender', type: 'address' },
-    ],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'approve',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'bool' }],
-  },
-] as const
-
-// Glazelets NFT ABI (ERC721Enumerable)
-export const GLAZELETS_ABI = [
-  {
-    name: 'mint',
-    type: 'function',
-    stateMutability: 'nonpayable',
-    inputs: [{ name: '_origin', type: 'string' }],
-    outputs: [],
-  },
-  {
-    name: 'totalSupply',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'mintsPerWallet',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: '', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'mintPrice',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'balanceOf',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'owner', type: 'address' }],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'tokenOfOwnerByIndex',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [
-      { name: 'owner', type: 'address' },
-      { name: 'index', type: 'uint256' },
-    ],
-    outputs: [{ name: '', type: 'uint256' }],
-  },
-  {
-    name: 'tokenURI',
-    type: 'function',
-    stateMutability: 'view',
-    inputs: [{ name: 'tokenId', type: 'uint256' }],
-    outputs: [{ name: '', type: 'string' }],
-  },
-] as const
