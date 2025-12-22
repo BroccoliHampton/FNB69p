@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import { MiningData, TickerInfo, MarketStats } from './types';
-import { getMiningCommentary } from './services/gemini';
+import { TickerInfo, MarketStats } from './types';
 import CrudeFlag from './components/CrudeFlag';
 import { useRig } from './hooks/useRig';
 import { TOKEN_ADDRESS } from './config/contracts';
@@ -13,7 +12,6 @@ const App: React.FC = () => {
   const { disconnect } = useDisconnect();
   
   const {
-    state,
     isLoading,
     mineRate,
     glazed,
@@ -32,9 +30,7 @@ const App: React.FC = () => {
   } = useRig();
 
   const [commentary, setCommentary] = useState<string>("INITIALIZING UGLY MINER...");
-  const commentaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Calculate derived values
   const mineRatePerSecond = mineRate / 1e18;
   const totalMined = glazed / 1e18;
   const balance = unitBalance;
@@ -58,9 +54,14 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isConfirmed) {
-      getMiningCommentary(Math.floor(Math.random() * 50) + 10).then(text => {
-        setCommentary(text);
-      });
+      const messages = [
+        "BLOCKS MINED SUCCESSFULLY!",
+        "HASH RATE MAXIMIZED!",
+        "TOKENS SECURED!",
+        "MINING OPERATION COMPLETE!",
+        "PROOF OF WORK VERIFIED!",
+      ];
+      setCommentary(messages[Math.floor(Math.random() * messages.length)]);
       refetch();
     }
   }, [isConfirmed, refetch]);
