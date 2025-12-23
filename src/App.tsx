@@ -55,7 +55,7 @@ const App: React.FC = () => {
     refetch,
   } = useRig();
 
-  const [commentary, setCommentary] = useState<string>("INITIALIZING UGLY MINER...");
+  const [commentary, setCommentary] = useState<string>("INITIALIZING $ETHEREUM MINER (its on Base btw)...");
   const [minedThisTurn, setMinedThisTurn] = useState(0);
 
   const mineRatePerSecond = mineRate / 1e18;
