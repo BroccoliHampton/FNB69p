@@ -7,7 +7,6 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 export function useRig() {
   const { address } = useAccount();
 
-  // Always fetch rig data (use zero address if not connected)
   const { data: rigData, refetch, isLoading } = useReadContract({
     address: MULTICALL_ADDRESS,
     abi: MULTICALL_ABI,
@@ -60,7 +59,6 @@ export function useRig() {
     }
   };
 
-  // Log any write errors
   if (writeError) {
     console.error('Write contract error:', writeError);
   }
