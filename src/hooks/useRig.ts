@@ -13,7 +13,7 @@ export function useRig() {
     functionName: 'getRig',
     args: [RIG_ADDRESS, address ?? ZERO_ADDRESS],
     query: {
-      refetchInterval: 5000,
+      refetchInterval: 15000, // Changed from 5000 to 15000 (15 seconds)
     },
   });
 
