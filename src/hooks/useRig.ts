@@ -7,7 +7,7 @@ const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
 export function useRig() {
   const { address } = useAccount();
 
-  const { data: rigData, refetch, isLoading } = useReadContract({
+  const { data: rigData, refetch, isLoading, error: readError, status } = useReadContract({
     address: MULTICALL_ADDRESS,
     abi: MULTICALL_ABI,
     functionName: 'getRig',
@@ -15,6 +15,14 @@ export function useRig() {
     query: {
       refetchInterval: 5000,
     },
+  });
+
+  console.log('CONTRACT READ:', {
+    status,
+    readError: readError?.message ?? 'none',
+    hasData: !!rigData,
+    multicall: MULTICALL_ADDRESS,
+    rig: RIG_ADDRESS,
   });
 
   const { writeContract, data: txHash, isPending: isMining, error: writeError } = useWriteContract();
@@ -26,6 +34,8 @@ export function useRig() {
   const state = rigData as RigState | undefined;
 
   const mine = async (maxPriceEth: string = '0.1', epochUri: string = '') => {
+    console.log('mine() called, state:', state);
+    
     if (!state) {
       console.log('No state available');
       return;
@@ -38,30 +48,21 @@ export function useRig() {
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
     const maxPrice = parseEther(maxPriceEth);
     
-    console.log('Mining with:', {
-      rig: RIG_ADDRESS,
-      epochId: state.epochId,
-      deadline,
-      maxPrice,
-      value: state.price,
+    console.log('Sending tx:', {
+      address: MULTICALL_ADDRESS,
+      functionName: 'mine',
+      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, ''],
+      value: state.price.toString(),
     });
     
-    try {
-      writeContract({
-        address: MULTICALL_ADDRESS,
-        abi: MULTICALL_ABI,
-        functionName: 'mine',
-        args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, epochUri],
-        value: state.price,
-      });
-    } catch (err) {
-      console.error('Mine error:', err);
-    }
+    writeContract({
+      address: MULTICALL_ADDRESS,
+      abi: MULTICALL_ABI,
+      functionName: 'mine',
+      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, ''],
+      value: state.price,
+    });
   };
-
-  if (writeError) {
-    console.error('Write contract error:', writeError);
-  }
 
   const getTimer = () => {
     if (!state) return '00:00';
@@ -77,6 +78,8 @@ export function useRig() {
     state,
     isLoading,
     refetch,
+    readError,
+    status,
     epochId: state?.epochId ? Number(state.epochId) : 0,
     mineRate: state?.ups ? Number(state.ups) : 0,
     glazed: state?.glazed ? Number(state.glazed) : 0,
