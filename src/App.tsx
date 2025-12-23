@@ -11,7 +11,10 @@ const App: React.FC = () => {
   const { disconnect } = useDisconnect();
   
   const {
+    state,
     isLoading,
+    readError,
+    status,
     mineRate,
     glazed,
     price,
@@ -100,6 +103,19 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white p-4 font-mono select-none overflow-x-hidden">
+
+      {/* DEBUG BOX - Remove after fixing */}
+      <div className="bg-red-900 p-4 mb-4 text-xs border-2 border-red-500">
+        <p className="font-bold mb-2">DEBUG INFO:</p>
+        <p>Connected: {isConnected ? 'YES' : 'NO'}</p>
+        <p>Address: {address ?? 'none'}</p>
+        <p>Loading: {isLoading ? 'YES' : 'NO'}</p>
+        <p>Status: {status}</p>
+        <p>State exists: {state ? 'YES' : 'NO'}</p>
+        <p>Read Error: {readError?.message ?? 'none'}</p>
+        <p>Price: {price}</p>
+        <p>EpochId: {epochId}</p>
+      </div>
       
       {/* 1. MINER HEADER */}
       <div className="flex justify-between items-center mb-6">
