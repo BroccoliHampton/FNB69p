@@ -16,16 +16,238 @@
   }
 }
 
-/* Flag segment animation */
-.flag-segment {
-  animation: wave 0.8s ease-in-out infinite;
+/* CHAOS ANIMATIONS */
+
+/* Glitch effect */
+.glitch {
+  animation: glitch 0.3s infinite;
 }
 
-@keyframes wave {
-  0%, 100% {
-    transform: rotateY(0deg);
+@keyframes glitch {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+/* RGB Split */
+.rgb-split {
+  animation: rgb-split 2s infinite;
+}
+
+@keyframes rgb-split {
+  0%, 100% { text-shadow: -2px 0 #ff0000, 2px 0 #00ffff; }
+  25% { text-shadow: 2px 0 #ff0000, -2px 0 #00ffff; }
+  50% { text-shadow: -2px 2px #ff0000, 2px -2px #00ffff; }
+  75% { text-shadow: 2px -2px #ff0000, -2px 2px #00ffff; }
+}
+
+/* Floating */
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+/* Spin chaos */
+.spin-chaos {
+  animation: spin-chaos 4s linear infinite;
+}
+
+@keyframes spin-chaos {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(90deg) scale(1.1); }
+  50% { transform: rotate(180deg) scale(1); }
+  75% { transform: rotate(270deg) scale(0.9); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Shake */
+.shake {
+  animation: shake 0.5s infinite;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px) rotate(-1deg); }
+  75% { transform: translateX(5px) rotate(1deg); }
+}
+
+/* Scanlines */
+.scanlines::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* CRT flicker */
+.crt-flicker {
+  animation: crt-flicker 0.15s infinite;
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 0.97; }
+  50% { opacity: 1; }
+  100% { opacity: 0.98; }
+}
+
+/* Rainbow border */
+.rainbow-border {
+  animation: rainbow-border 3s linear infinite;
+}
+
+@keyframes rainbow-border {
+  0% { border-color: #ff0000; }
+  16% { border-color: #ff8800; }
+  33% { border-color: #ffff00; }
+  50% { border-color: #00ff00; }
+  66% { border-color: #0088ff; }
+  83% { border-color: #ff00ff; }
+  100% { border-color: #ff0000; }
+}
+
+/* Pulse scale */
+.pulse-scale {
+  animation: pulse-scale 1s ease-in-out infinite;
+}
+
+@keyframes pulse-scale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Crazy bounce */
+.crazy-bounce {
+  animation: crazy-bounce 0.5s ease-in-out infinite;
+}
+
+@keyframes crazy-bounce {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(5deg); }
+  50% { transform: translateY(0) rotate(0deg); }
+  75% { transform: translateY(-5px) rotate(-5deg); }
+}
+
+/* Disco background */
+.disco-bg {
+  animation: disco-bg 0.5s infinite;
+}
+
+@keyframes disco-bg {
+  0% { background-color: #ff0000; }
+  25% { background-color: #00ff00; }
+  50% { background-color: #0000ff; }
+  75% { background-color: #ffff00; }
+  100% { background-color: #ff0000; }
+}
+
+/* Slide in from sides */
+.slide-chaos {
+  animation: slide-chaos 2s ease-in-out infinite;
+}
+
+@keyframes slide-chaos {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(10px); }
+  75% { transform: translateX(-10px); }
+}
+
+/* Skew effect */
+.skew-chaos {
+  animation: skew-chaos 3s ease-in-out infinite;
+}
+
+@keyframes skew-chaos {
+  0%, 100% { transform: skewX(0deg); }
+  25% { transform: skewX(5deg); }
+  75% { transform: skewX(-5deg); }
+}
+
+/* Matrix rain effect for text */
+.matrix-text {
+  animation: matrix-text 0.1s steps(1) infinite;
+}
+
+@keyframes matrix-text {
+  0% { opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+/* Neon flicker */
+.neon-flicker {
+  animation: neon-flicker 1.5s infinite alternate;
+}
+
+@keyframes neon-flicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+    text-shadow: 
+      0 0 5px #fff,
+      0 0 10px #fff,
+      0 0 20px #ff00ff,
+      0 0 30px #ff00ff,
+      0 0 40px #ff00ff;
   }
-  50% {
-    transform: rotateY(15deg);
+  20%, 24%, 55% {
+    text-shadow: none;
   }
+}
+
+/* Wobble */
+.wobble {
+  animation: wobble 1s ease-in-out infinite;
+}
+
+@keyframes wobble {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+/* Zoom pulse */
+.zoom-pulse {
+  animation: zoom-pulse 2s ease-in-out infinite;
+}
+
+@keyframes zoom-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Color cycle text */
+.color-cycle {
+  animation: color-cycle 2s linear infinite;
+}
+
+@keyframes color-cycle {
+  0% { color: #ff0000; }
+  33% { color: #00ff00; }
+  66% { color: #0000ff; }
+  100% { color: #ff0000; }
+}
+
+/* Strobe */
+.strobe {
+  animation: strobe 0.1s infinite;
+}
+
+@keyframes strobe {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.5; }
 }
