@@ -2,14 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --mine-blue: #0066FF;
-  --mine-orange: #FF6600;
-  --mine-green: #00FF66;
+/* Neon Crash Animation */
+.neon-crash {
+  animation: neon-glow 1.5s ease-in-out infinite alternate;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background: black;
+@keyframes neon-glow {
+  from {
+    filter: drop-shadow(0 0 5px #ff4500) drop-shadow(0 0 10px #ff4500) drop-shadow(0 0 15px #ff4500);
+  }
+  to {
+    filter: drop-shadow(0 0 10px #00ff00) drop-shadow(0 0 20px #00ff00) drop-shadow(0 0 30px #0000ff);
+  }
+}
+
+/* Flag segment animation */
+.flag-segment {
+  animation: wave 0.8s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(15deg);
+  }
 }
