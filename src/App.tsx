@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { TickerInfo, MarketStats } from './types';
-import CrudeFlag from './components/CrudeFlag';
 import { useRig } from './hooks/useRig';
 import { TOKEN_ADDRESS } from './config/contracts';
 
@@ -67,16 +66,23 @@ const App: React.FC = () => {
   }, [isConfirmed, refetch]);
 
   const handleMine = useCallback(async () => {
+    console.log('Button clicked!');
+    console.log('isConnected:', isConnected);
+    
     if (!isConnected) {
+      console.log('Connecting wallet...');
       connect({ connector: injected() });
       return;
     }
     
+    console.log('Calling mine...');
     setCommentary("MINING IN PROGRESS...");
     await mine();
+    console.log('Mine called');
   }, [isConnected, connect, mine]);
 
   const handleConnect = () => {
+    console.log('Connect button clicked, isConnected:', isConnected);
     if (isConnected) {
       disconnect();
     } else {
@@ -162,7 +168,7 @@ const App: React.FC = () => {
       {/* 4. 3D FLAG (CENTERED CONTAINER) */}
       <div className="w-full h-64 bg-mine-green border-4 border-black mb-8 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
         <div className="absolute top-0 left-0 p-2 text-xs font-black bg-white text-mine-blue border-b-4 border-r-4 border-black z-10">UGLY_FLAG.OBJ</div>
-        <CrudeFlag />
+        <div className="text-6xl font-black text-white animate-pulse">⛏️</div>
       </div>
 
       {/* 5. YOUR POSITION */}
