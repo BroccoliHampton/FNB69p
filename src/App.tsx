@@ -165,6 +165,21 @@ function useEthPrice() {
   return { ethPrice, ethToUsd, usdToEth };
 }
 
+// Floating emoji component
+const FloatingEmoji = ({ emoji, style }: { emoji: string; style: React.CSSProperties }) => (
+  <div className="fixed pointer-events-none text-4xl float opacity-50" style={style}>
+    {emoji}
+  </div>
+);
+
+// Random position generator
+const randomPos = () => ({
+  left: `${Math.random() * 100}%`,
+  top: `${Math.random() * 100}%`,
+  animationDelay: `${Math.random() * 3}s`,
+  animationDuration: `${2 + Math.random() * 4}s`,
+});
+
 const App: React.FC = () => {
   const [hasEntered, setHasEntered] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
@@ -194,10 +209,19 @@ const App: React.FC = () => {
 
   const [commentary, setCommentary] = useState<string>("WELCOME TO FNB69P...");
   const [minedThisTurn, setMinedThisTurn] = useState(0);
+  const [chaosLevel, setChaosLevel] = useState(0);
 
   const mineRatePerSecond = mineRate / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
+
+  // Increase chaos over time
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setChaosLevel(prev => (prev + 1) % 100);
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!epochStartTime || !mineRatePerSecond) return;
@@ -220,6 +244,9 @@ const App: React.FC = () => {
         "TOKENS SECURED!",
         "MINING OPERATION COMPLETE!",
         "PROOF OF WORK VERIFIED!",
+        "🚀🚀🚀 MOON SOON 🚀🚀🚀",
+        "WAGMI WAGMI WAGMI",
+        "GIGABRAIN MOVE!!!",
       ];
       setCommentary(messages[Math.floor(Math.random() * messages.length)]);
       refetch();
@@ -242,7 +269,7 @@ const App: React.FC = () => {
       connect({ connector: injected() });
       return;
     }
-    setCommentary("MINING IN PROGRESS...");
+    setCommentary("⛏️ MINING IN PROGRESS... ⛏️");
     await mine();
   }, [isConnected, connect, mine]);
 
@@ -256,29 +283,53 @@ const App: React.FC = () => {
 
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
+  const floatingEmojis = ['🍩', '⛏️', '💎', '🚀', '🔥', '💰', '🌙', '⚡', '🎮', '👾'];
+
   // ENTER SCREEN
   if (!hasEntered) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center p-8">
-          <h1 className="text-4xl font-black text-mine-orange mb-4 animate-pulse">
+      <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden scanlines">
+        {/* Floating background emojis */}
+        {floatingEmojis.map((emoji, i) => (
+          <FloatingEmoji key={i} emoji={emoji} style={randomPos()} />
+        ))}
+        
+        {/* Spinning background elements */}
+        <div className="absolute top-10 left-10 text-6xl spin-chaos opacity-20">🍩</div>
+        <div className="absolute bottom-10 right-10 text-6xl spin-chaos opacity-20" style={{ animationDelay: '1s' }}>⛏️</div>
+        <div className="absolute top-1/4 right-1/4 text-4xl float opacity-30">💎</div>
+        <div className="absolute bottom-1/4 left-1/4 text-4xl float opacity-30" style={{ animationDelay: '2s' }}>🚀</div>
+        
+        <div className="text-center p-8 relative z-10">
+          <h1 className="text-6xl font-black text-mine-orange mb-4 rgb-split glitch">
             FNB69P
           </h1>
-          <p className="text-white text-sm mb-2 font-mono">
+          <p className="text-white text-lg mb-2 font-mono neon-flicker">
             FrodoNixonBandicoot69pepe
           </p>
-          <p className="text-gray-500 text-xs mb-8 font-mono">
+          <p className="text-gray-500 text-sm mb-8 font-mono wobble">
             a shitcoin on Base (ticker is $ETHEREUM btw)
           </p>
+          
+          {/* Crazy warning text */}
+          <div className="mb-6 text-xs color-cycle font-bold">
+            ⚠️ WARNING: MAXIMUM DEGEN TERRITORY ⚠️
+          </div>
+          
           <button
             onClick={handleEnter}
-            className="bg-mine-orange text-mine-blue font-black text-2xl px-12 py-4 border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all active:scale-95"
+            className="bg-mine-orange text-mine-blue font-black text-3xl px-16 py-6 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all active:scale-95 rainbow-border pulse-scale"
           >
-            ENTER
+            🎮 ENTER 🎮
           </button>
-          <p className="text-gray-600 text-xs mt-4 font-mono">
-            🔊 sound on for best experience
+          
+          <p className="text-gray-600 text-sm mt-6 font-mono shake">
+            🔊 SOUND ON FOR MAXIMUM CHAOS 🔊
           </p>
+          
+          <div className="mt-4 text-2xl crazy-bounce">
+            🍩⛏️💎🚀🔥💰🌙⚡
+          </div>
         </div>
       </div>
     );
@@ -286,24 +337,38 @@ const App: React.FC = () => {
 
   // MAIN APP
   return (
-    <div className="min-h-screen bg-black flex justify-center">
-      <div className="w-full max-w-md bg-black text-white p-4 font-mono select-none overflow-x-hidden">
+    <div className="min-h-screen bg-black flex justify-center relative overflow-hidden crt-flicker">
+      {/* Scanlines overlay */}
+      <div className="scanlines fixed inset-0 pointer-events-none z-50"></div>
+      
+      {/* Floating chaos emojis */}
+      {floatingEmojis.slice(0, 5).map((emoji, i) => (
+        <FloatingEmoji key={i} emoji={emoji} style={randomPos()} />
+      ))}
+      
+      {/* Side decorations */}
+      <div className="fixed left-2 top-1/4 text-2xl spin-chaos opacity-30">🍩</div>
+      <div className="fixed right-2 top-1/3 text-2xl spin-chaos opacity-30" style={{ animationDelay: '0.5s' }}>⛏️</div>
+      <div className="fixed left-2 bottom-1/4 text-2xl float opacity-30">💎</div>
+      <div className="fixed right-2 bottom-1/3 text-2xl float opacity-30" style={{ animationDelay: '1s' }}>🚀</div>
+      
+      <div className="w-full max-w-md bg-black text-white p-4 font-mono select-none overflow-x-hidden relative z-10">
         
         {/* 1. HEADER */}
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xs font-black uppercase italic bg-mine-blue px-2 leading-tight flex-1 mr-2">
+          <h2 className="text-xs font-black uppercase italic bg-mine-blue px-2 leading-tight flex-1 mr-2 skew-chaos rainbow-border border-2">
             FrodoNixonBandicoot69pepe, a shitcoin on Base (ticker is $ETHEREUM btw)
           </h2>
           <div className="flex gap-1">
             <button 
               onClick={toggleMusic}
-              className="bg-[#27272A] text-white px-2 py-1 rounded text-xs font-bold border border-black"
+              className="bg-[#27272A] text-white px-2 py-1 rounded text-xs font-bold border border-black crazy-bounce"
             >
               {musicPlaying ? '🔊' : '🔇'}
             </button>
             <button 
               onClick={handleConnect}
-              className="bg-[#2D1B44] text-[#A855F7] px-2 py-1 rounded flex items-center text-xs font-bold border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap"
+              className="bg-[#2D1B44] text-[#A855F7] px-2 py-1 rounded flex items-center text-xs font-bold border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap pulse-scale"
             >
               <span className="mr-1">🔗</span> 
               {isConnected ? shortenAddress(address!) : 'Connect'}
@@ -311,80 +376,99 @@ const App: React.FC = () => {
           </div>
         </div>
 
+        {/* Scrolling ticker */}
+        <div className="overflow-hidden mb-4 bg-mine-blue/20 border border-mine-blue">
+          <div className="whitespace-nowrap animate-marquee text-xs py-1">
+            🚀 $ETHEREUM TO THE MOON 🌙 | ⛏️ MINE NOW OR CRY LATER 😭 | 💎 DIAMOND HANDS ONLY 💎 | 🍩 DONUT GANG 🍩 | 🔥 THIS IS FINE 🔥 | 
+            🚀 $ETHEREUM TO THE MOON 🌙 | ⛏️ MINE NOW OR CRY LATER 😭 | 💎 DIAMOND HANDS ONLY 💎 | 🍩 DONUT GANG 🍩 | 🔥 THIS IS FINE 🔥
+          </div>
+        </div>
+
         {/* CURRENT MINER */}
         {miner && miner !== '0x0000000000000000000000000000000000000000' && (
-          <div className="mb-3 bg-mine-green/20 border border-mine-green p-2 text-sm">
-            <span className="text-gray-500 font-bold">Current Miner: </span>
-            <span className="font-black text-mine-green">{shortenAddress(miner)}</span>
+          <div className="mb-3 bg-mine-green/20 border-2 border-mine-green p-2 text-sm slide-chaos rainbow-border">
+            <span className="text-gray-500 font-bold">⛏️ Current Miner: </span>
+            <span className="font-black text-mine-green glitch">{shortenAddress(miner)}</span>
           </div>
         )}
 
         {/* EPOCH TIMER */}
         <div className="mb-4 text-right">
-          <span className="text-gray-500 font-bold text-sm">Epoch Timer: </span>
-          <span className="text-lg font-black text-mine-orange">{timer}</span>
+          <span className="text-gray-500 font-bold text-sm">⏱️ Epoch Timer: </span>
+          <span className="text-xl font-black text-mine-orange rgb-split">{timer}</span>
         </div>
 
         {/* 2. CURRENT MINER STATS */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mine rate</label>
-            <p className="text-lg font-black">{mineRatePerSecond.toFixed(2)}/s</p>
+        <div className="grid grid-cols-2 gap-4 mb-6 relative">
+          {/* Decorative corner */}
+          <div className="absolute -top-2 -left-2 text-lg spin-chaos">⚡</div>
+          <div className="absolute -top-2 -right-2 text-lg spin-chaos" style={{ animationDelay: '0.5s' }}>💎</div>
+          
+          <div className="bg-black/50 p-2 border border-mine-orange/50 wobble">
+            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">⚡ Mine rate</label>
+            <p className="text-lg font-black color-cycle">{mineRatePerSecond.toFixed(2)}/s</p>
             <p className="text-gray-600 font-bold text-xs">
               ${(mineRatePerSecond * unitPrice).toFixed(4)}/s
             </p>
           </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mined This Turn</label>
-            <p className="text-lg font-black">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          <div className="bg-black/50 p-2 border border-mine-green/50 wobble" style={{ animationDelay: '0.2s' }}>
+            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">💰 Mined This Turn</label>
+            <p className="text-lg font-black neon-flicker">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
             <p className="text-gray-600 font-bold text-xs">
               ${(minedThisTurn * unitPrice).toFixed(4)}
             </p>
           </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mine Price</label>
+          <div className="bg-black/50 p-2 border border-mine-blue/50 wobble" style={{ animationDelay: '0.4s' }}>
+            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">💎 Mine Price</label>
             <p className="text-lg font-black">Ξ{priceInEth.toFixed(4)}</p>
-            <p className="text-gray-600 font-bold text-xs">${ethToUsd(priceInEth).toFixed(2)}</p>
+            <p className="text-gray-600 font-bold text-xs rgb-split">${ethToUsd(priceInEth).toFixed(2)}</p>
           </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Epoch</label>
-            <p className="text-lg font-black">#{epochId}</p>
+          <div className="bg-black/50 p-2 border border-purple-500/50 wobble" style={{ animationDelay: '0.6s' }}>
+            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🔢 Epoch</label>
+            <p className="text-lg font-black text-purple-400">#{epochId}</p>
           </div>
         </div>
 
         {/* 3. NEON CRASH CHARACTER */}
-        <div className="w-full h-80 bg-mine-green border-2 border-black mb-6 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 left-0 p-1 text-[10px] font-black bg-white text-mine-blue border-b-2 border-r-2 border-black z-10">FNB69P.OBJ</div>
+        <div className="w-full h-80 bg-mine-green border-4 border-black mb-6 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)] rainbow-border">
+          <div className="absolute top-0 left-0 p-1 text-[10px] font-black bg-white text-mine-blue border-b-2 border-r-2 border-black z-10 glitch">FNB69P.OBJ</div>
+          
+          {/* Corner decorations */}
+          <div className="absolute top-2 right-2 text-2xl spin-chaos">🍩</div>
+          <div className="absolute bottom-2 left-2 text-2xl spin-chaos" style={{ animationDelay: '1s' }}>⛏️</div>
+          <div className="absolute bottom-2 right-2 text-xl float">💎</div>
+          
           <NeonCrash />
         </div>
 
         {/* 4. YOUR POSITION */}
-        <div className="mb-6 border-t-2 border-mine-orange pt-4">
-          <h2 className="text-xl font-black uppercase mb-4 italic">Your Position</h2>
+        <div className="mb-6 border-t-4 border-mine-orange pt-4 relative">
+          <div className="absolute -top-3 left-4 bg-black px-2 text-mine-orange text-xs">👇👇👇</div>
+          <h2 className="text-xl font-black uppercase mb-4 italic rgb-split">💼 Your Position</h2>
           {!isConnected ? (
-            <p className="text-gray-500 font-bold text-sm">Connect wallet to view your position</p>
+            <p className="text-gray-500 font-bold text-sm shake">🔗 Connect wallet to view your position 🔗</p>
           ) : isLoading ? (
-            <p className="text-gray-500 font-bold text-sm">Loading...</p>
+            <p className="text-gray-500 font-bold text-sm">⏳ Loading... ⏳</p>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Token Balance</label>
+              <div className="bg-gradient-to-br from-mine-orange/20 to-transparent p-2 border border-mine-orange/30 slide-chaos">
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🪙 Token Balance</label>
                 <p className="text-lg font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 <p className="text-gray-600 font-bold text-xs">
                   ${(balance * unitPrice).toFixed(2)} · Ξ{usdToEth(balance * unitPrice).toFixed(4)}
                 </p>
               </div>
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">DONUT Balance</label>
+              <div className="bg-gradient-to-br from-pink-500/20 to-transparent p-2 border border-pink-500/30 slide-chaos" style={{ animationDelay: '0.3s' }}>
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🍩 DONUT Balance</label>
                 <p className="text-lg font-black">🍩 {donutBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               </div>
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">ETH Balance</label>
+              <div className="bg-gradient-to-br from-blue-500/20 to-transparent p-2 border border-blue-500/30 slide-chaos" style={{ animationDelay: '0.6s' }}>
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">⟠ ETH Balance</label>
                 <p className="text-lg font-black">Ξ{parseFloat(ethBalance).toFixed(4)}</p>
                 <p className="text-gray-600 font-bold text-xs">${ethToUsd(parseFloat(ethBalance)).toFixed(2)}</p>
               </div>
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Unit Price</label>
+              <div className="bg-gradient-to-br from-green-500/20 to-transparent p-2 border border-green-500/30 slide-chaos" style={{ animationDelay: '0.9s' }}>
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">📈 Unit Price</label>
                 <p className="text-lg font-black">${unitPrice.toFixed(6)}</p>
                 <p className="text-gray-600 font-bold text-xs">Ξ{usdToEth(unitPrice).toFixed(8)}</p>
               </div>
@@ -393,30 +477,31 @@ const App: React.FC = () => {
         </div>
 
         {/* 5. ABOUT SECTION */}
-        <div className="mb-6 bg-mine-blue border-2 border-black p-3">
-          <h2 className="text-xl font-black uppercase mb-3 italic">About</h2>
+        <div className="mb-6 bg-mine-blue border-4 border-black p-3 relative skew-chaos" style={{ animationDuration: '10s' }}>
+          <div className="absolute -top-3 -right-3 text-2xl spin-chaos">📖</div>
+          <h2 className="text-xl font-black uppercase mb-3 italic neon-flicker">📜 About</h2>
           <p className="text-xs font-bold leading-relaxed mb-3">
             FNB69p is a shitcoin on base continuously mined through a dutch auction spot. This means only one person in the whole world can mine $ETHEREUM at a time. Each time someone mines the price doubles, and cools down to nothing over an hour. 80% of the mining price goes back to the last person who mined, meaning u might make money or lose money- but you always earn $ETHEREUM.
           </p>
-          <p className="text-xs font-bold mb-3 text-mine-orange">
+          <p className="text-xs font-bold mb-3 text-mine-orange rgb-split">
             the ticker is $ETHEREUM btw, on jesse pollacks Base network.
           </p>
           <div className="flex items-center gap-2 mb-3 font-bold text-sm">
-            <span className="text-gray-400">Token:</span>
-            <span className="text-white">{shortenAddress(TOKEN_ADDRESS)}</span>
+            <span className="text-gray-400">📍 Token:</span>
+            <span className="text-white glitch">{shortenAddress(TOKEN_ADDRESS)}</span>
           </div>
           <button 
             onClick={() => navigator.clipboard.writeText(TOKEN_ADDRESS)}
-            className="bg-[#27272A] px-3 py-1 rounded-full border border-gray-600 font-bold text-xs flex items-center"
+            className="bg-[#27272A] px-3 py-1 rounded-full border border-gray-600 font-bold text-xs flex items-center pulse-scale"
           >
-            Copy Address <span className="ml-1">📋</span>
+            📋 Copy Address <span className="ml-1">📋</span>
           </button>
         </div>
 
         {/* 6. AI COMMENTARY & MINE BUTTON */}
         <div className="sticky bottom-4 z-50">
-          <div className="bg-mine-orange p-2 border-2 border-black mb-2">
-            <p className="text-xs font-black text-black bg-white p-1">
+          <div className="bg-mine-orange p-2 border-4 border-black mb-2 shake rainbow-border">
+            <p className="text-xs font-black text-black bg-white p-1 glitch">
               {'> '} {commentary}
             </p>
           </div>
@@ -424,16 +509,23 @@ const App: React.FC = () => {
             onClick={handleMine}
             disabled={isMining}
             className={`
-              w-full h-16 font-black text-2xl border-4 border-black 
-              transition-all active:scale-95
+              w-full h-20 font-black text-2xl border-4 border-black 
+              transition-all active:scale-95 relative overflow-hidden
               ${isMining 
-                ? 'bg-mine-green text-white cursor-wait' 
-                : 'bg-mine-orange text-mine-blue shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1'
+                ? 'bg-mine-green text-white cursor-wait disco-bg' 
+                : 'bg-mine-orange text-mine-blue shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 pulse-scale'
               }
             `}
           >
-            {!isConnected ? 'CONNECT' : isMining ? 'MINING...' : `MINE Ξ${priceInEth.toFixed(4)} ($${ethToUsd(priceInEth).toFixed(2)})`}
+            <span className="relative z-10">
+              {!isConnected ? '🔗 CONNECT 🔗' : isMining ? '⛏️ MINING... ⛏️' : `⛏️ MINE Ξ${priceInEth.toFixed(4)} ($${ethToUsd(priceInEth).toFixed(2)}) ⛏️`}
+            </span>
           </button>
+          
+          {/* Bottom decoration */}
+          <div className="text-center mt-2 text-xs color-cycle font-bold">
+            🚀 WAGMI 🚀 NGMI 😭 WAGMI 🚀 NGMI 😭 🚀
+          </div>
         </div>
       </div>
     </div>
