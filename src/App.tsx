@@ -31,7 +31,7 @@ const App: React.FC = () => {
   const [commentary, setCommentary] = useState<string>("INITIALIZING UGLY MINER...");
 
   const mineRatePerSecond = mineRate / 1e18;
-  const totalMined = glazed / 1e18;
+  const circulatingSupply = glazed / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
 
@@ -130,7 +130,7 @@ const App: React.FC = () => {
         <span className="text-2xl font-black text-mine-orange">{timer}</span>
       </div>
 
-      {/* 2. MAIN MINING STATS */}
+      {/* 2. MAIN MINING STATS - Current Miner Info */}
       <div className="grid grid-cols-2 gap-y-6 mb-8">
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Mine rate</label>
@@ -140,9 +140,9 @@ const App: React.FC = () => {
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Total Glazed</label>
           <div className="flex items-center">
-            <p className="text-2xl font-black">+{totalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <p className="text-2xl font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
           </div>
-          <p className="text-gray-600 font-bold text-sm">${(totalMined * unitPrice).toFixed(2)}</p>
+          <p className="text-gray-600 font-bold text-sm">${(balance * unitPrice).toFixed(2)}</p>
         </div>
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Mine Price</label>
@@ -211,13 +211,13 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. STATS SECTION */}
+      {/* 6. STATS SECTION - Global Stats */}
       <div className="mb-8 border-b-4 border-mine-green pb-8">
         <h2 className="text-3xl font-black uppercase mb-6 italic">Stats</h2>
         <div className="grid grid-cols-2 gap-y-8">
           <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Total Glazed</label>
-            <p className="text-2xl font-black">{totalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Circulating Supply</label>
+            <p className="text-2xl font-black">{circulatingSupply.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           </div>
           <div>
             <label className="text-gray-500 uppercase font-bold block mb-1">Unit Price</label>
