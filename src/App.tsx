@@ -93,29 +93,10 @@ const App: React.FC = () => {
     }
   };
 
-  const TokenIcon = () => (
-    <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center border border-black overflow-hidden mr-1">
-      <div className="w-full h-full bg-mine-orange animate-spin flex items-center justify-center text-[8px] font-black text-white">S</div>
-    </div>
-  );
-
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
   return (
     <div className="min-h-screen bg-black text-white p-4 font-mono select-none overflow-x-hidden">
-
-      {/* DEBUG BOX - Remove after fixing */}
-      <div className="bg-red-900 p-4 mb-4 text-xs border-2 border-red-500">
-        <p className="font-bold mb-2">DEBUG INFO:</p>
-        <p>Connected: {isConnected ? 'YES' : 'NO'}</p>
-        <p>Address: {address ?? 'none'}</p>
-        <p>Loading: {isLoading ? 'YES' : 'NO'}</p>
-        <p>Status: {status}</p>
-        <p>State exists: {state ? 'YES' : 'NO'}</p>
-        <p>Read Error: {readError?.message ?? 'none'}</p>
-        <p>Price: {price}</p>
-        <p>EpochId: {epochId}</p>
-      </div>
       
       {/* 1. MINER HEADER */}
       <div className="flex justify-between items-center mb-6">
@@ -138,7 +119,7 @@ const App: React.FC = () => {
       <div className="flex justify-between items-start mb-8">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-white border-4 border-mine-blue flex items-center justify-center overflow-hidden">
-            <div className="w-12 h-12 bg-mine-orange flex items-center justify-center text-2xl font-black text-white italic">S</div>
+            <div className="w-12 h-12 bg-mine-orange flex items-center justify-center text-2xl font-black text-white italic">⛏️</div>
           </div>
           <div>
             <h3 className="text-2xl font-black leading-none">{tickerInfo.name}</h3>
@@ -166,7 +147,6 @@ const App: React.FC = () => {
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Total Glazed</label>
           <div className="flex items-center">
-            <TokenIcon />
             <p className="text-2xl font-black">+{totalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           </div>
           <p className="text-gray-600 font-bold text-sm">${(totalMined * unitPrice).toFixed(2)}</p>
@@ -199,7 +179,6 @@ const App: React.FC = () => {
             <div>
               <label className="text-gray-500 uppercase font-bold block mb-1">Token Balance</label>
               <div className="flex items-center">
-                <TokenIcon />
                 <p className="text-2xl font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               </div>
               <p className="text-gray-600 font-bold text-sm">${(balance * unitPrice).toFixed(2)}</p>
@@ -227,7 +206,6 @@ const App: React.FC = () => {
         <h2 className="text-3xl font-black uppercase mb-4 italic">About</h2>
         <div className="flex items-center gap-2 mb-4 font-bold">
           <span className="text-gray-400">Deployed by</span>
-          <TokenIcon />
           <div className="flex gap-1">
             <div className="w-4 h-4 bg-mine-blue"></div>
             <div className="w-4 h-4 bg-mine-orange"></div>
