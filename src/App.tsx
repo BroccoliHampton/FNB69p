@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
-import { TickerInfo, MarketStats } from './types';
 import { useRig } from './hooks/useRig';
 import { TOKEN_ADDRESS } from './config/contracts';
 
@@ -13,8 +12,6 @@ const App: React.FC = () => {
   const {
     state,
     isLoading,
-    readError,
-    status,
     mineRate,
     glazed,
     price,
@@ -37,22 +34,6 @@ const App: React.FC = () => {
   const totalMined = glazed / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
-  
-  const [marketStats] = useState<MarketStats>({
-    marketCap: 47.00,
-    totalSupply: 544640,
-    liquidity: 38.42,
-    volume24h: 33.31,
-  });
-
-  const tickerInfo: TickerInfo = {
-    symbol: "$ETHEREUM",
-    name: "STICKR ツ",
-    address: `${TOKEN_ADDRESS.slice(0, 6)}...${TOKEN_ADDRESS.slice(-4)}`,
-    deployedBy: "FNB69P",
-    description: "the ticker is $ETHEREUM. FNB69P. second best shitcoin on Base.",
-    timer: timer
-  };
 
   useEffect(() => {
     if (isConfirmed) {
@@ -95,6 +76,26 @@ const App: React.FC = () => {
 
   const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 
+  // Flag component
+  const CrudeFlag = () => (
+    <div className="relative w-48 h-32" style={{ perspective: '500px' }}>
+      <div className="absolute inset-0 flex">
+        {[...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 flag-segment"
+            style={{
+              backgroundColor: i % 3 === 0 ? '#0000FF' : i % 3 === 1 ? '#FF4500' : '#008000',
+              animationDelay: `${i * 0.1}s`,
+              transformOrigin: 'left center',
+            }}
+          />
+        ))}
+      </div>
+      <div className="absolute left-0 top-0 bottom-0 w-2 bg-gray-800" />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-black text-white p-4 font-mono select-none overflow-x-hidden">
       
@@ -115,20 +116,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. PROFILE SECTION */}
-      <div className="flex justify-between items-start mb-8">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-white border-4 border-mine-blue flex items-center justify-center overflow-hidden">
-            <div className="w-12 h-12 bg-mine-orange flex items-center justify-center text-2xl font-black text-white italic">⛏️</div>
-          </div>
-          <div>
-            <h3 className="text-2xl font-black leading-none">{tickerInfo.name}</h3>
-            <p className="text-gray-500 font-bold">{tickerInfo.address}</p>
-          </div>
-        </div>
-        <div className="text-gray-500 font-bold text-xl">{tickerInfo.timer}</div>
-      </div>
-
       {/* CURRENT MINER */}
       {miner && miner !== '0x0000000000000000000000000000000000000000' && (
         <div className="mb-4 bg-mine-green/20 border-2 border-mine-green p-2">
@@ -137,7 +124,13 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* 3. MAIN MINING STATS */}
+      {/* EPOCH TIMER */}
+      <div className="mb-8 text-right">
+        <span className="text-gray-500 font-bold">Epoch Timer: </span>
+        <span className="text-2xl font-black text-mine-orange">{timer}</span>
+      </div>
+
+      {/* 2. MAIN MINING STATS */}
       <div className="grid grid-cols-2 gap-y-6 mb-8">
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Mine rate</label>
@@ -161,13 +154,13 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. 3D FLAG (CENTERED CONTAINER) */}
+      {/* 3. 3D FLAG (CENTERED CONTAINER) */}
       <div className="w-full h-64 bg-mine-green border-4 border-black mb-8 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_50px_rgba(0,0,0,0.5)]">
         <div className="absolute top-0 left-0 p-2 text-xs font-black bg-white text-mine-blue border-b-4 border-r-4 border-black z-10">UGLY_FLAG.OBJ</div>
-        <div className="text-6xl font-black text-white animate-pulse">⛏️</div>
+        <CrudeFlag />
       </div>
 
-      {/* 5. YOUR POSITION */}
+      {/* 4. YOUR POSITION */}
       <div className="mb-8 border-t-4 border-mine-orange pt-4">
         <h2 className="text-3xl font-black uppercase mb-6 italic">Your position</h2>
         {!isConnected ? (
@@ -201,56 +194,47 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* 6. ABOUT SECTION */}
+      {/* 5. ABOUT SECTION */}
       <div className="mb-8 bg-mine-blue border-4 border-black p-4">
         <h2 className="text-3xl font-black uppercase mb-4 italic">About</h2>
         <div className="flex items-center gap-2 mb-4 font-bold">
-          <span className="text-gray-400">Deployed by</span>
-          <div className="flex gap-1">
-            <div className="w-4 h-4 bg-mine-blue"></div>
-            <div className="w-4 h-4 bg-mine-orange"></div>
-            <div className="w-4 h-4 bg-mine-green"></div>
-          </div>
-          <span>ticker $ETHEREUM</span>
+          <span className="text-gray-400">Token Address:</span>
+          <span className="text-white">{shortenAddress(TOKEN_ADDRESS)}</span>
         </div>
-        <p className="text-xl font-bold leading-tight mb-6">{tickerInfo.description}</p>
         <div className="flex gap-2 flex-wrap">
           <button 
             onClick={() => navigator.clipboard.writeText(TOKEN_ADDRESS)}
             className="bg-[#27272A] px-4 py-2 rounded-full border border-gray-600 font-bold text-sm flex items-center"
           >
-            ETHEREUM <span className="ml-2">📋</span>
-          </button>
-          <button className="bg-[#27272A] px-4 py-2 rounded-full border border-gray-600 font-bold text-sm flex items-center">
-            ETHEREUM–DONUT LP <span className="ml-2">📋</span>
+            Copy Token Address <span className="ml-2">📋</span>
           </button>
         </div>
       </div>
 
-      {/* 7. STATS SECTION */}
+      {/* 6. STATS SECTION */}
       <div className="mb-8 border-b-4 border-mine-green pb-8">
         <h2 className="text-3xl font-black uppercase mb-6 italic">Stats</h2>
         <div className="grid grid-cols-2 gap-y-8">
           <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Market cap</label>
-            <p className="text-2xl font-black">${marketStats.marketCap.toFixed(2)}</p>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Total Glazed</label>
+            <p className="text-2xl font-black">{totalMined.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
           </div>
           <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Total supply</label>
-            <p className="text-2xl font-black">{marketStats.totalSupply.toLocaleString()}</p>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Unit Price</label>
+            <p className="text-2xl font-black">${unitPrice.toFixed(6)}</p>
           </div>
           <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Liquidity</label>
-            <p className="text-2xl font-black">${marketStats.liquidity.toFixed(2)}</p>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Current Epoch</label>
+            <p className="text-2xl font-black">#{epochId}</p>
           </div>
           <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">24h volume</label>
-            <p className="text-2xl font-black">${marketStats.volume24h.toFixed(2)}</p>
+            <label className="text-gray-500 uppercase font-bold block mb-1">Mine Rate</label>
+            <p className="text-2xl font-black">{mineRatePerSecond.toFixed(2)}/s</p>
           </div>
         </div>
       </div>
 
-      {/* 8. AI COMMENTARY & MINE BUTTON */}
+      {/* 7. AI COMMENTARY & MINE BUTTON */}
       <div className="sticky bottom-4 z-50">
         <div className="bg-mine-orange p-2 border-4 border-black mb-2 animate-bounce">
           <p className="text-sm font-black text-black bg-white p-1">
