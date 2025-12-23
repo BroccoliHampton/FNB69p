@@ -2,21 +2,23 @@ import { useReadContract, useWriteContract, useAccount, useWaitForTransactionRec
 import { formatEther, parseEther } from 'viem';
 import { MULTICALL_ADDRESS, MULTICALL_ABI, RIG_ADDRESS, type RigState } from '../config/contracts';
 
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as const;
+
 export function useRig() {
   const { address } = useAccount();
 
+  // Always fetch rig data (use zero address if not connected)
   const { data: rigData, refetch, isLoading } = useReadContract({
     address: MULTICALL_ADDRESS,
     abi: MULTICALL_ABI,
     functionName: 'getRig',
-    args: address ? [RIG_ADDRESS, address] : undefined,
+    args: [RIG_ADDRESS, address ?? ZERO_ADDRESS],
     query: {
-      enabled: !!address,
       refetchInterval: 5000,
     },
   });
 
-  const { writeContract, data: txHash, isPending: isMining } = useWriteContract();
+  const { writeContract, data: txHash, isPending: isMining, error: writeError } = useWriteContract();
   
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -24,20 +26,44 @@ export function useRig() {
 
   const state = rigData as RigState | undefined;
 
-  const mine = async (maxPriceEth: string = '0.01', epochUri: string = '') => {
-    if (!state) return;
+  const mine = async (maxPriceEth: string = '0.1', epochUri: string = '') => {
+    if (!state) {
+      console.log('No state available');
+      return;
+    }
+    if (!address) {
+      console.log('No wallet connected');
+      return;
+    }
     
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
     const maxPrice = parseEther(maxPriceEth);
     
-    writeContract({
-      address: MULTICALL_ADDRESS,
-      abi: MULTICALL_ABI,
-      functionName: 'mine',
-      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, epochUri],
+    console.log('Mining with:', {
+      rig: RIG_ADDRESS,
+      epochId: state.epochId,
+      deadline,
+      maxPrice,
       value: state.price,
     });
+    
+    try {
+      writeContract({
+        address: MULTICALL_ADDRESS,
+        abi: MULTICALL_ABI,
+        functionName: 'mine',
+        args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, epochUri],
+        value: state.price,
+      });
+    } catch (err) {
+      console.error('Mine error:', err);
+    }
   };
+
+  // Log any write errors
+  if (writeError) {
+    console.error('Write contract error:', writeError);
+  }
 
   const getTimer = () => {
     if (!state) return '00:00';
@@ -59,7 +85,7 @@ export function useRig() {
     price: state?.price ? formatEther(state.price) : '0',
     priceWei: state?.price ?? 0n,
     unitPrice: state?.unitPrice ? Number(state.unitPrice) / 1e18 : 0,
-    miner: state?.miner ?? '0x0000000000000000000000000000000000000000',
+    miner: state?.miner ?? ZERO_ADDRESS,
     ethBalance: state?.ethBalance ? formatEther(state.ethBalance) : '0',
     wethBalance: state?.wethBalance ? formatEther(state.wethBalance) : '0',
     donutBalance: state?.donutBalance ? Number(state.donutBalance) / 1e18 : 0,
@@ -72,5 +98,6 @@ export function useRig() {
     isMining: isMining || isConfirming,
     isConfirmed,
     txHash,
+    writeError,
   };
 }
