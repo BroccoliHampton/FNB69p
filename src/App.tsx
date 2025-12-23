@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { useRig } from './hooks/useRig';
+import { useEthPrice } from './hooks/useEthPrice';
 import { TOKEN_ADDRESS } from './config/contracts';
 import NeonCrash from './components/NeonCrash';
 
@@ -9,6 +10,7 @@ const App: React.FC = () => {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
+  const { ethPrice, ethToUsd, usdToEth } = useEthPrice();
   
   const {
     isLoading,
@@ -119,16 +121,23 @@ const App: React.FC = () => {
           <div>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mine rate</label>
             <p className="text-lg font-black">{mineRatePerSecond.toFixed(2)}/s</p>
-            <p className="text-gray-600 font-bold text-xs">${(mineRatePerSecond * unitPrice).toFixed(4)}/s</p>
+            <p className="text-gray-600 font-bold text-xs">
+              ${(mineRatePerSecond * unitPrice).toFixed(4)}/s
+              <span className="text-gray-700"> · Ξ{usdToEth(mineRatePerSecond * unitPrice).toFixed(6)}/s</span>
+            </p>
           </div>
           <div>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mined This Turn</label>
             <p className="text-lg font-black">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-            <p className="text-gray-600 font-bold text-xs">${(minedThisTurn * unitPrice).toFixed(4)}</p>
+            <p className="text-gray-600 font-bold text-xs">
+              ${(minedThisTurn * unitPrice).toFixed(4)}
+              <span className="text-gray-700"> · Ξ{usdToEth(minedThisTurn * unitPrice).toFixed(6)}</span>
+            </p>
           </div>
           <div>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mine Price</label>
             <p className="text-lg font-black">Ξ{priceInEth.toFixed(4)}</p>
+            <p className="text-gray-600 font-bold text-xs">${ethToUsd(priceInEth).toFixed(2)}</p>
           </div>
           <div>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Epoch</label>
@@ -154,7 +163,10 @@ const App: React.FC = () => {
               <div>
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Token Balance</label>
                 <p className="text-lg font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                <p className="text-gray-600 font-bold text-xs">${(balance * unitPrice).toFixed(2)}</p>
+                <p className="text-gray-600 font-bold text-xs">
+                  ${(balance * unitPrice).toFixed(2)}
+                  <span className="text-gray-700"> · Ξ{usdToEth(balance * unitPrice).toFixed(4)}</span>
+                </p>
               </div>
               <div>
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">DONUT Balance</label>
@@ -163,10 +175,12 @@ const App: React.FC = () => {
               <div>
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">ETH Balance</label>
                 <p className="text-lg font-black">Ξ{parseFloat(ethBalance).toFixed(4)}</p>
+                <p className="text-gray-600 font-bold text-xs">${ethToUsd(parseFloat(ethBalance)).toFixed(2)}</p>
               </div>
               <div>
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Unit Price</label>
                 <p className="text-lg font-black">${unitPrice.toFixed(6)}</p>
+                <p className="text-gray-600 font-bold text-xs">Ξ{usdToEth(unitPrice).toFixed(8)}</p>
               </div>
             </div>
           )}
@@ -204,7 +218,7 @@ const App: React.FC = () => {
             onClick={handleMine}
             disabled={isMining}
             className={`
-              w-full h-16 font-black text-3xl border-4 border-black 
+              w-full h-16 font-black text-2xl border-4 border-black 
               transition-all active:scale-95
               ${isMining 
                 ? 'bg-mine-green text-white cursor-wait' 
@@ -212,7 +226,7 @@ const App: React.FC = () => {
               }
             `}
           >
-            {!isConnected ? 'CONNECT' : isMining ? 'MINING...' : `MINE (Ξ${priceInEth.toFixed(4)})`}
+            {!isConnected ? 'CONNECT' : isMining ? 'MINING...' : `MINE Ξ${priceInEth.toFixed(4)} ($${ethToUsd(priceInEth).toFixed(2)})`}
           </button>
         </div>
       </div>
