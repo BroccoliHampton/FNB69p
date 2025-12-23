@@ -2,9 +2,34 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { injected } from 'wagmi/connectors';
 import { useRig } from './hooks/useRig';
-import { useEthPrice } from './hooks/useEthPrice';
 import { TOKEN_ADDRESS } from './config/contracts';
 import NeonCrash from './components/NeonCrash';
+
+// ETH Price Hook - inline to avoid import issues
+function useEthPrice() {
+  const [ethPrice, setEthPrice] = useState<number>(3500);
+
+  useEffect(() => {
+    const fetchPrice = async () => {
+      try {
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
+        const data = await res.json();
+        setEthPrice(data.ethereum.usd);
+      } catch (err) {
+        console.error('Failed to fetch ETH price:', err);
+      }
+    };
+
+    fetchPrice();
+    const interval = setInterval(fetchPrice, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const ethToUsd = (eth: number) => eth * ethPrice;
+  const usdToEth = (usd: number) => ethPrice > 0 ? usd / ethPrice : 0;
+
+  return { ethPrice, ethToUsd, usdToEth };
+}
 
 const App: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -37,7 +62,6 @@ const App: React.FC = () => {
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
 
-  // Calculate mined this turn based on elapsed time and mine rate
   useEffect(() => {
     if (!epochStartTime || !mineRatePerSecond) return;
     
@@ -123,7 +147,6 @@ const App: React.FC = () => {
             <p className="text-lg font-black">{mineRatePerSecond.toFixed(2)}/s</p>
             <p className="text-gray-600 font-bold text-xs">
               ${(mineRatePerSecond * unitPrice).toFixed(4)}/s
-              <span className="text-gray-700"> · Ξ{usdToEth(mineRatePerSecond * unitPrice).toFixed(6)}/s</span>
             </p>
           </div>
           <div>
@@ -131,7 +154,6 @@ const App: React.FC = () => {
             <p className="text-lg font-black">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
             <p className="text-gray-600 font-bold text-xs">
               ${(minedThisTurn * unitPrice).toFixed(4)}
-              <span className="text-gray-700"> · Ξ{usdToEth(minedThisTurn * unitPrice).toFixed(6)}</span>
             </p>
           </div>
           <div>
@@ -164,8 +186,7 @@ const App: React.FC = () => {
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Token Balance</label>
                 <p className="text-lg font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 <p className="text-gray-600 font-bold text-xs">
-                  ${(balance * unitPrice).toFixed(2)}
-                  <span className="text-gray-700"> · Ξ{usdToEth(balance * unitPrice).toFixed(4)}</span>
+                  ${(balance * unitPrice).toFixed(2)} · Ξ{usdToEth(balance * unitPrice).toFixed(4)}
                 </p>
               </div>
               <div>
