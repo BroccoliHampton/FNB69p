@@ -1,258 +1,154 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { injected } from 'wagmi/connectors';
-import { useRig } from './hooks/useRig';
-import { TOKEN_ADDRESS } from './config/contracts';
-import NeonCrash from './components/NeonCrash';
+/**
+ * Procedural 8-bit Liquid Drum n Bass Theme Generator
+ * Style: 170 BPM, Chaotic Breakbeats, Arpeggiated Square Waves
+ */
 
-// ETH Price Hook - inline to avoid import issues
-function useEthPrice() {
-  const [ethPrice, setEthPrice] = useState<number>(3500);
+class AudioTheme {
+  private ctx: AudioContext | null = null;
+  private isPlaying: boolean = false;
+  private nextNoteTime: number = 0;
+  private currentStep: number = 0;
+  private timerId: number | null = null;
+  private bpm: number = 172;
+  private lookahead: number = 25.0;
+  private scheduleAheadTime: number = 0.1;
 
-  useEffect(() => {
-    const fetchPrice = async () => {
-      try {
-        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-        const data = await res.json();
-        setEthPrice(data.ethereum.usd);
-      } catch (err) {
-        console.error('Failed to fetch ETH price:', err);
-      }
-    };
+  constructor() {}
 
-    fetchPrice();
-    const interval = setInterval(fetchPrice, 60000);
-    return () => clearInterval(interval);
-  }, []);
+  private init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+  }
 
-  const ethToUsd = (eth: number) => eth * ethPrice;
-  const usdToEth = (usd: number) => ethPrice > 0 ? usd / ethPrice : 0;
+  private createOsc(type: OscillatorType, freq: number, startTime: number, duration: number, volume: number) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
 
-  return { ethPrice, ethToUsd, usdToEth };
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startTime);
+    
+    gain.gain.setValueAtTime(volume, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  }
+
+  private playKick(time: number) {
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.frequency.setValueAtTime(150, time);
+    osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.1);
+    gain.gain.setValueAtTime(0.5, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(time);
+    osc.stop(time + 0.1);
+  }
+
+  private playSnare(time: number) {
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * 0.1;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 1000;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.3, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start(time);
+  }
+
+  private playHiHat(time: number) {
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * 0.02;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 8000;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.1, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.02);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start(time);
+  }
+
+  private scheduler() {
+    while (this.ctx && this.nextNoteTime < this.ctx.currentTime + this.scheduleAheadTime) {
+      this.scheduleNote(this.currentStep, this.nextNoteTime);
+      this.advanceNote();
+    }
+    this.timerId = window.setTimeout(() => this.scheduler(), this.lookahead);
+  }
+
+  private advanceNote() {
+    const secondsPerBeat = 60.0 / this.bpm;
+    this.nextNoteTime += 0.25 * secondsPerBeat;
+    this.currentStep = (this.currentStep + 1) % 16;
+  }
+
+  private scheduleNote(step: number, time: number) {
+    if (step === 0 || step === 8 || step === 10) this.playKick(time);
+    if (step === 4 || step === 12) this.playSnare(time);
+    if (step % 2 === 0) this.playHiHat(time);
+    if (step % 4 === 2) this.playHiHat(time + 0.05);
+
+    const notes = [261.63, 329.63, 392.00, 523.25];
+    const chaoticNote = notes[Math.floor(Math.random() * notes.length)] * (Math.random() > 0.8 ? 2 : 1);
+    
+    this.createOsc('square', chaoticNote, time, 0.1, 0.05);
+    
+    if (step % 8 === 0) {
+      this.createOsc('triangle', 65.41, time, 0.5, 0.2);
+    }
+  }
+
+  public start() {
+    this.init();
+    if (this.isPlaying) return;
+    this.isPlaying = true;
+    this.nextNoteTime = this.ctx!.currentTime;
+    this.scheduler();
+  }
+
+  public stop() {
+    this.isPlaying = false;
+    if (this.timerId) clearTimeout(this.timerId);
+  }
+
+  public toggle() {
+    if (this.isPlaying) this.stop();
+    else this.start();
+    return this.isPlaying;
+  }
+
+  public getIsPlaying() {
+    return this.isPlaying;
+  }
 }
 
-const App: React.FC = () => {
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { ethPrice, ethToUsd, usdToEth } = useEthPrice();
-  
-  const {
-    isLoading,
-    mineRate,
-    price,
-    unitPrice,
-    unitBalance,
-    donutBalance,
-    ethBalance,
-    timer,
-    miner,
-    epochId,
-    epochStartTime,
-    mine,
-    isMining,
-    isConfirmed,
-    refetch,
-  } = useRig();
-
-  const [commentary, setCommentary] = useState<string>("INITIALIZING $ETHEREUM MINER (its on Base btw)...");
-  const [minedThisTurn, setMinedThisTurn] = useState(0);
-
-  const mineRatePerSecond = mineRate / 1e18;
-  const balance = unitBalance;
-  const priceInEth = parseFloat(price);
-
-  useEffect(() => {
-    if (!epochStartTime || !mineRatePerSecond) return;
-    
-    const interval = setInterval(() => {
-      const now = Math.floor(Date.now() / 1000);
-      const elapsed = now - epochStartTime;
-      const mined = elapsed * mineRatePerSecond;
-      setMinedThisTurn(mined);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [epochStartTime, mineRatePerSecond]);
-
-  useEffect(() => {
-    if (isConfirmed) {
-      const messages = [
-        "BLOCKS MINED SUCCESSFULLY!",
-        "HASH RATE MAXIMIZED!",
-        "TOKENS SECURED!",
-        "MINING OPERATION COMPLETE!",
-        "PROOF OF WORK VERIFIED!",
-      ];
-      setCommentary(messages[Math.floor(Math.random() * messages.length)]);
-      refetch();
-    }
-  }, [isConfirmed, refetch]);
-
-  const handleMine = useCallback(async () => {
-    if (!isConnected) {
-      connect({ connector: injected() });
-      return;
-    }
-    setCommentary("MINING IN PROGRESS...");
-    await mine();
-  }, [isConnected, connect, mine]);
-
-  const handleConnect = () => {
-    if (isConnected) {
-      disconnect();
-    } else {
-      connect({ connector: injected() });
-    }
-  };
-
-  const shortenAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-
-  return (
-    <div className="min-h-screen bg-black flex justify-center">
-      <div className="w-full max-w-md bg-black text-white p-4 font-mono select-none overflow-x-hidden">
-        
-        {/* 1. HEADER */}
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-xs font-black uppercase italic bg-mine-blue px-2 leading-tight flex-1 mr-2">
-            FrodoNixonBandicoot69pepe, a shitcoin on Base (ticker is $ETHEREUM btw)
-          </h2>
-          <button 
-            onClick={handleConnect}
-            className="bg-[#2D1B44] text-[#A855F7] px-2 py-1 rounded flex items-center text-xs font-bold border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] whitespace-nowrap"
-          >
-            <span className="mr-1">🔗</span> 
-            {isConnected ? shortenAddress(address!) : 'Connect'}
-          </button>
-        </div>
-
-        {/* CURRENT MINER */}
-        {miner && miner !== '0x0000000000000000000000000000000000000000' && (
-          <div className="mb-3 bg-mine-green/20 border border-mine-green p-2 text-sm">
-            <span className="text-gray-500 font-bold">Current Miner: </span>
-            <span className="font-black text-mine-green">{shortenAddress(miner)}</span>
-          </div>
-        )}
-
-        {/* EPOCH TIMER */}
-        <div className="mb-4 text-right">
-          <span className="text-gray-500 font-bold text-sm">Epoch Timer: </span>
-          <span className="text-lg font-black text-mine-orange">{timer}</span>
-        </div>
-
-        {/* 2. CURRENT MINER STATS */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mine rate</label>
-            <p className="text-lg font-black">{mineRatePerSecond.toFixed(2)}/s</p>
-            <p className="text-gray-600 font-bold text-xs">
-              ${(mineRatePerSecond * unitPrice).toFixed(4)}/s
-            </p>
-          </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mined This Turn</label>
-            <p className="text-lg font-black">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-            <p className="text-gray-600 font-bold text-xs">
-              ${(minedThisTurn * unitPrice).toFixed(4)}
-            </p>
-          </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Mine Price</label>
-            <p className="text-lg font-black">Ξ{priceInEth.toFixed(4)}</p>
-            <p className="text-gray-600 font-bold text-xs">${ethToUsd(priceInEth).toFixed(2)}</p>
-          </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Epoch</label>
-            <p className="text-lg font-black">#{epochId}</p>
-          </div>
-        </div>
-
-        {/* 3. NEON CRASH CHARACTER */}
-        <div className="w-full h-80 bg-mine-green border-2 border-black mb-6 flex items-center justify-center relative overflow-hidden shadow-[inset_0_0_30px_rgba(0,0,0,0.5)]">
-          <div className="absolute top-0 left-0 p-1 text-[10px] font-black bg-white text-mine-blue border-b-2 border-r-2 border-black z-10">FNB69P.OBJ</div>
-          <NeonCrash />
-        </div>
-
-        {/* 4. YOUR POSITION */}
-        <div className="mb-6 border-t-2 border-mine-orange pt-4">
-          <h2 className="text-xl font-black uppercase mb-4 italic">Your Position</h2>
-          {!isConnected ? (
-            <p className="text-gray-500 font-bold text-sm">Connect wallet to view your position</p>
-          ) : isLoading ? (
-            <p className="text-gray-500 font-bold text-sm">Loading...</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Token Balance</label>
-                <p className="text-lg font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                <p className="text-gray-600 font-bold text-xs">
-                  ${(balance * unitPrice).toFixed(2)} · Ξ{usdToEth(balance * unitPrice).toFixed(4)}
-                </p>
-              </div>
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">DONUT Balance</label>
-                <p className="text-lg font-black">🍩 {donutBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-              </div>
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">ETH Balance</label>
-                <p className="text-lg font-black">Ξ{parseFloat(ethBalance).toFixed(4)}</p>
-                <p className="text-gray-600 font-bold text-xs">${ethToUsd(parseFloat(ethBalance)).toFixed(2)}</p>
-              </div>
-              <div>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">Unit Price</label>
-                <p className="text-lg font-black">${unitPrice.toFixed(6)}</p>
-                <p className="text-gray-600 font-bold text-xs">Ξ{usdToEth(unitPrice).toFixed(8)}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* 5. ABOUT SECTION */}
-        <div className="mb-6 bg-mine-blue border-2 border-black p-3">
-          <h2 className="text-xl font-black uppercase mb-3 italic">About</h2>
-          <p className="text-xs font-bold leading-relaxed mb-3">
-            FNB69p is a shitcoin on base continuously mined through a dutch auction spot. This means only one person in the whole world can mine $ETHEREUM at a time. Each time someone mines the price doubles, and cools down to nothing over an hour. 80% of the mining price goes back to the last person who mined, meaning u might make money or lose money- but you always earn $ETHEREUM.
-          </p>
-          <p className="text-xs font-bold mb-3 text-mine-orange">
-            the ticker is $ETHEREUM btw, on jesse pollacks Base network.
-          </p>
-          <div className="flex items-center gap-2 mb-3 font-bold text-sm">
-            <span className="text-gray-400">Token:</span>
-            <span className="text-white">{shortenAddress(TOKEN_ADDRESS)}</span>
-          </div>
-          <button 
-            onClick={() => navigator.clipboard.writeText(TOKEN_ADDRESS)}
-            className="bg-[#27272A] px-3 py-1 rounded-full border border-gray-600 font-bold text-xs flex items-center"
-          >
-            Copy Address <span className="ml-1">📋</span>
-          </button>
-        </div>
-
-        {/* 6. AI COMMENTARY & MINE BUTTON */}
-        <div className="sticky bottom-4 z-50">
-          <div className="bg-mine-orange p-2 border-2 border-black mb-2">
-            <p className="text-xs font-black text-black bg-white p-1">
-              {'> '} {commentary}
-            </p>
-          </div>
-          <button
-            onClick={handleMine}
-            disabled={isMining}
-            className={`
-              w-full h-16 font-black text-2xl border-4 border-black 
-              transition-all active:scale-95
-              ${isMining 
-                ? 'bg-mine-green text-white cursor-wait' 
-                : 'bg-mine-orange text-mine-blue shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1'
-              }
-            `}
-          >
-            {!isConnected ? 'CONNECT' : isMining ? 'MINING...' : `MINE Ξ${priceInEth.toFixed(4)} ($${ethToUsd(priceInEth).toFixed(2)})`}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default App;
+export const themeSong = new AudioTheme();
