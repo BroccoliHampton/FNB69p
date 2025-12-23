@@ -22,6 +22,7 @@ const App: React.FC = () => {
     timer,
     miner,
     epochId,
+    epochStartTime,
     mine,
     isMining,
     isConfirmed,
@@ -29,11 +30,26 @@ const App: React.FC = () => {
   } = useRig();
 
   const [commentary, setCommentary] = useState<string>("INITIALIZING UGLY MINER...");
+  const [glazedThisTurn, setGlazedThisTurn] = useState(0);
 
   const mineRatePerSecond = mineRate / 1e18;
   const circulatingSupply = glazed / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
+
+  // Calculate glazed this turn based on elapsed time and mine rate
+  useEffect(() => {
+    if (!epochStartTime || !mineRatePerSecond) return;
+    
+    const interval = setInterval(() => {
+      const now = Math.floor(Date.now() / 1000);
+      const elapsed = now - epochStartTime;
+      const glazed = elapsed * mineRatePerSecond;
+      setGlazedThisTurn(glazed);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [epochStartTime, mineRatePerSecond]);
 
   useEffect(() => {
     if (isConfirmed) {
@@ -130,7 +146,7 @@ const App: React.FC = () => {
         <span className="text-2xl font-black text-mine-orange">{timer}</span>
       </div>
 
-      {/* 2. MAIN MINING STATS - Current Miner Info */}
+      {/* 2. CURRENT MINER STATS */}
       <div className="grid grid-cols-2 gap-y-6 mb-8">
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Mine rate</label>
@@ -138,11 +154,11 @@ const App: React.FC = () => {
           <p className="text-gray-600 font-bold text-sm">${(mineRatePerSecond * unitPrice).toFixed(4)}/s</p>
         </div>
         <div>
-          <label className="text-gray-500 uppercase font-bold block mb-1">Total Glazed</label>
+          <label className="text-gray-500 uppercase font-bold block mb-1">Glazed This Turn</label>
           <div className="flex items-center">
-            <p className="text-2xl font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+            <p className="text-2xl font-black">{glazedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
           </div>
-          <p className="text-gray-600 font-bold text-sm">${(balance * unitPrice).toFixed(2)}</p>
+          <p className="text-gray-600 font-bold text-sm">${(glazedThisTurn * unitPrice).toFixed(4)}</p>
         </div>
         <div>
           <label className="text-gray-500 uppercase font-bold block mb-1">Mine Price</label>
@@ -160,9 +176,9 @@ const App: React.FC = () => {
         <CrudeFlag />
       </div>
 
-      {/* 4. YOUR POSITION */}
+      {/* 4. YOUR POSITION - Wallet Balances */}
       <div className="mb-8 border-t-4 border-mine-orange pt-4">
-        <h2 className="text-3xl font-black uppercase mb-6 italic">Your position</h2>
+        <h2 className="text-3xl font-black uppercase mb-6 italic">Your Position</h2>
         {!isConnected ? (
           <p className="text-gray-500 font-bold">Connect wallet to view your position</p>
         ) : isLoading ? (
@@ -213,7 +229,7 @@ const App: React.FC = () => {
 
       {/* 6. STATS SECTION - Global Stats */}
       <div className="mb-8 border-b-4 border-mine-green pb-8">
-        <h2 className="text-3xl font-black uppercase mb-6 italic">Stats</h2>
+        <h2 className="text-3xl font-black uppercase mb-6 italic">Global Stats</h2>
         <div className="grid grid-cols-2 gap-y-8">
           <div>
             <label className="text-gray-500 uppercase font-bold block mb-1">Circulating Supply</label>
