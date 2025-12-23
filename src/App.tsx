@@ -10,10 +10,8 @@ const App: React.FC = () => {
   const { disconnect } = useDisconnect();
   
   const {
-    state,
     isLoading,
     mineRate,
-    glazed,
     price,
     unitPrice,
     unitBalance,
@@ -33,7 +31,6 @@ const App: React.FC = () => {
   const [glazedThisTurn, setGlazedThisTurn] = useState(0);
 
   const mineRatePerSecond = mineRate / 1e18;
-  const circulatingSupply = glazed / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
 
@@ -227,30 +224,7 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. STATS SECTION - Global Stats */}
-      <div className="mb-8 border-b-4 border-mine-green pb-8">
-        <h2 className="text-3xl font-black uppercase mb-6 italic">Global Stats</h2>
-        <div className="grid grid-cols-2 gap-y-8">
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Circulating Supply</label>
-            <p className="text-2xl font-black">{circulatingSupply.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
-          </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Unit Price</label>
-            <p className="text-2xl font-black">${unitPrice.toFixed(6)}</p>
-          </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Current Epoch</label>
-            <p className="text-2xl font-black">#{epochId}</p>
-          </div>
-          <div>
-            <label className="text-gray-500 uppercase font-bold block mb-1">Mine Rate</label>
-            <p className="text-2xl font-black">{mineRatePerSecond.toFixed(2)}/s</p>
-          </div>
-        </div>
-      </div>
-
-      {/* 7. AI COMMENTARY & MINE BUTTON */}
+      {/* 6. AI COMMENTARY & MINE BUTTON */}
       <div className="sticky bottom-4 z-50">
         <div className="bg-mine-orange p-2 border-4 border-black mb-2 animate-bounce">
           <p className="text-sm font-black text-black bg-white p-1">
