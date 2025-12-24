@@ -13,16 +13,8 @@ export function useRig() {
     functionName: 'getRig',
     args: [RIG_ADDRESS, address ?? ZERO_ADDRESS],
     query: {
-      refetchInterval: 15000, // Changed from 5000 to 15000 (15 seconds)
+      refetchInterval: 15000,
     },
-  });
-
-  console.log('CONTRACT READ:', {
-    status,
-    readError: readError?.message ?? 'none',
-    hasData: !!rigData,
-    multicall: MULTICALL_ADDRESS,
-    rig: RIG_ADDRESS,
   });
 
   const { writeContract, data: txHash, isPending: isMining, error: writeError } = useWriteContract();
@@ -34,8 +26,6 @@ export function useRig() {
   const state = rigData as RigState | undefined;
 
   const mine = async (maxPriceEth: string = '0.1', epochUri: string = '') => {
-    console.log('mine() called, state:', state);
-    
     if (!state) {
       console.log('No state available');
       return;
@@ -48,29 +38,22 @@ export function useRig() {
     const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
     const maxPrice = parseEther(maxPriceEth);
     
-    console.log('Sending tx:', {
-      address: MULTICALL_ADDRESS,
-      functionName: 'mine',
-      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, ''],
-      value: state.price.toString(),
-    });
-    
     writeContract({
       address: MULTICALL_ADDRESS,
       abi: MULTICALL_ABI,
       functionName: 'mine',
-      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, ''],
+      args: [RIG_ADDRESS, state.epochId, deadline, maxPrice, epochUri],
       value: state.price,
     });
   };
 
+  // Count UP from zero (elapsed time)
   const getTimer = () => {
-    if (!state) return '00:00';
+    if (!state) return '0m 00s';
     const now = BigInt(Math.floor(Date.now() / 1000));
-    const elapsed = now - state.epochStartTime;
-    const remaining = Math.max(0, 3600 - Number(elapsed));
-    const mins = Math.floor(remaining / 60);
-    const secs = remaining % 60;
+    const elapsed = Math.max(0, Number(now - state.epochStartTime));
+    const mins = Math.floor(elapsed / 60);
+    const secs = elapsed % 60;
     return `${mins}m ${secs.toString().padStart(2, '0')}s`;
   };
 
