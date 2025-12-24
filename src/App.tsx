@@ -187,13 +187,12 @@ const App: React.FC = () => {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
-  const { ethPrice, ethToUsd, usdToEth } = useEthPrice();
+  const { ethToUsd } = useEthPrice();
   
   const {
     isLoading,
     mineRate,
     price,
-    unitPrice,
     unitBalance,
     donutBalance,
     ethBalance,
@@ -209,22 +208,10 @@ const App: React.FC = () => {
 
   const [commentary, setCommentary] = useState<string>("WELCOME TO FNB69P...");
   const [minedThisTurn, setMinedThisTurn] = useState(0);
-  const [chaosLevel, setChaosLevel] = useState(0);
 
   const mineRatePerSecond = mineRate / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
-  
-  // Unit price is in ETH, calculate USD value
-  const unitPriceUsd = ethToUsd(unitPrice);
-
-  // Increase chaos over time
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setChaosLevel(prev => (prev + 1) % 100);
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (!epochStartTime || !mineRatePerSecond) return;
@@ -410,16 +397,10 @@ const App: React.FC = () => {
           <div className="bg-black/50 p-2 border border-mine-orange/50 wobble">
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">⚡ Mine rate</label>
             <p className="text-lg font-black color-cycle">{mineRatePerSecond.toFixed(2)}/s</p>
-            <p className="text-gray-600 font-bold text-xs">
-              ${(mineRatePerSecond * unitPriceUsd).toFixed(4)}/s
-            </p>
           </div>
           <div className="bg-black/50 p-2 border border-mine-green/50 wobble" style={{ animationDelay: '0.2s' }}>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">💰 Mined This Turn</label>
             <p className="text-lg font-black neon-flicker">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-            <p className="text-gray-600 font-bold text-xs">
-              ${(minedThisTurn * unitPriceUsd).toFixed(4)}
-            </p>
           </div>
           <div className="bg-black/50 p-2 border border-mine-blue/50 wobble" style={{ animationDelay: '0.4s' }}>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">💎 Mine Price</label>
@@ -453,27 +434,19 @@ const App: React.FC = () => {
           ) : isLoading ? (
             <p className="text-gray-500 font-bold text-sm">⏳ Loading... ⏳</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="bg-gradient-to-br from-mine-orange/20 to-transparent p-2 border border-mine-orange/30 slide-chaos">
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🪙 Token Balance</label>
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🪙 FNB69p Balance</label>
                 <p className="text-lg font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-                <p className="text-gray-600 font-bold text-xs">
-                  ${(balance * unitPriceUsd).toFixed(2)} · Ξ{(balance * unitPrice).toFixed(6)}
-                </p>
               </div>
               <div className="bg-gradient-to-br from-pink-500/20 to-transparent p-2 border border-pink-500/30 slide-chaos" style={{ animationDelay: '0.3s' }}>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🍩 DONUT Balance</label>
-                <p className="text-lg font-black">🍩 {donutBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🍩 DONUT</label>
+                <p className="text-lg font-black">{donutBalance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
               </div>
               <div className="bg-gradient-to-br from-blue-500/20 to-transparent p-2 border border-blue-500/30 slide-chaos" style={{ animationDelay: '0.6s' }}>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">⟠ ETH Balance</label>
+                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">⟠ ETH</label>
                 <p className="text-lg font-black">Ξ{parseFloat(ethBalance).toFixed(4)}</p>
                 <p className="text-gray-600 font-bold text-xs">${ethToUsd(parseFloat(ethBalance)).toFixed(2)}</p>
-              </div>
-              <div className="bg-gradient-to-br from-green-500/20 to-transparent p-2 border border-green-500/30 slide-chaos" style={{ animationDelay: '0.9s' }}>
-                <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">📈 Unit Price</label>
-                <p className="text-lg font-black">Ξ{unitPrice.toFixed(8)}</p>
-                <p className="text-gray-600 font-bold text-xs">${unitPriceUsd.toFixed(6)}</p>
               </div>
             </div>
           )}
