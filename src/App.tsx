@@ -187,7 +187,7 @@ const App: React.FC = () => {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
   const { disconnect } = useDisconnect();
-  const { ethToUsd, usdToEth } = useEthPrice();
+  const { ethPrice, ethToUsd, usdToEth } = useEthPrice();
   
   const {
     isLoading,
@@ -214,6 +214,9 @@ const App: React.FC = () => {
   const mineRatePerSecond = mineRate / 1e18;
   const balance = unitBalance;
   const priceInEth = parseFloat(price);
+  
+  // Unit price is in ETH, calculate USD value
+  const unitPriceUsd = ethToUsd(unitPrice);
 
   // Increase chaos over time
   useEffect(() => {
@@ -408,14 +411,14 @@ const App: React.FC = () => {
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">⚡ Mine rate</label>
             <p className="text-lg font-black color-cycle">{mineRatePerSecond.toFixed(2)}/s</p>
             <p className="text-gray-600 font-bold text-xs">
-              ${(mineRatePerSecond * unitPrice).toFixed(4)}/s
+              ${(mineRatePerSecond * unitPriceUsd).toFixed(4)}/s
             </p>
           </div>
           <div className="bg-black/50 p-2 border border-mine-green/50 wobble" style={{ animationDelay: '0.2s' }}>
             <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">💰 Mined This Turn</label>
             <p className="text-lg font-black neon-flicker">{minedThisTurn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
             <p className="text-gray-600 font-bold text-xs">
-              ${(minedThisTurn * unitPrice).toFixed(4)}
+              ${(minedThisTurn * unitPriceUsd).toFixed(4)}
             </p>
           </div>
           <div className="bg-black/50 p-2 border border-mine-blue/50 wobble" style={{ animationDelay: '0.4s' }}>
@@ -455,7 +458,7 @@ const App: React.FC = () => {
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">🪙 Token Balance</label>
                 <p className="text-lg font-black">{balance.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
                 <p className="text-gray-600 font-bold text-xs">
-                  ${(balance * unitPrice).toFixed(2)} · Ξ{usdToEth(balance * unitPrice).toFixed(4)}
+                  ${(balance * unitPriceUsd).toFixed(2)} · Ξ{(balance * unitPrice).toFixed(6)}
                 </p>
               </div>
               <div className="bg-gradient-to-br from-pink-500/20 to-transparent p-2 border border-pink-500/30 slide-chaos" style={{ animationDelay: '0.3s' }}>
@@ -469,8 +472,8 @@ const App: React.FC = () => {
               </div>
               <div className="bg-gradient-to-br from-green-500/20 to-transparent p-2 border border-green-500/30 slide-chaos" style={{ animationDelay: '0.9s' }}>
                 <label className="text-gray-500 uppercase font-bold block mb-1 text-xs">📈 Unit Price</label>
-                <p className="text-lg font-black">${unitPrice.toFixed(6)}</p>
-                <p className="text-gray-600 font-bold text-xs">Ξ{usdToEth(unitPrice).toFixed(8)}</p>
+                <p className="text-lg font-black">Ξ{unitPrice.toFixed(8)}</p>
+                <p className="text-gray-600 font-bold text-xs">${unitPriceUsd.toFixed(6)}</p>
               </div>
             </div>
           )}
